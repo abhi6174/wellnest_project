@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>View EHR</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-image: linear-gradient(to right, #83a4d4, #b6fbff);
+            margin: 0;
+            padding: 0;
+            color: #333;
+            min-height: 100vh;
+        }
+
+        .navbar {
+            width: 100%;
+            background-color: #7791a8;
+            color: white;
+            padding: 15px 0;
+            text-align: center;
+            font-size: 24px;
+            font-weight: bold;
+            position: relative;
+        }
+
+        .button-container {
+            position: absolute;
+            top: 15px;
+            right: 20px;
+            display: flex;
+            gap: 10px;
+        }
+
+        .button {
+            padding: 5px 10px;
+            font-size: 14px;
+            background-color: #f44336;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        .button:hover {
+            background-color: #d32f2f;
+        }
+
+        .back-button, .update-button {
+            background-color: #0073e6;
+        }
+
+        .back-button:hover, .update-button:hover {
+            background-color: #005bb5;
+        }
+
+        .content-wrapper {
+            width: 80%;
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 20px;
+        }
+
+        .container {
+            background-color: #ffffff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .field-container {
+            margin-bottom: 20px;
+        }
+
+        .field-label {
+            font-weight: bold;
+            margin-bottom: 5px;
+            color: #333;
+        }
+
+        .field-content {
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            min-height: 50px;
+            background-color: #f9f9f9;
+        }
+
+        .loading {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #0073e6;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+            display: none;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        textarea {
+            width: 100%;
+            min-height: 50px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-family: Arial, sans-serif;
+            resize: vertical;
+        }
+    </style>
+</head>
+<body>
+<div class="navbar">
+    View EHR
+    <div class="button-container">
+        <button class="button logout-button" id="logoutButton">Logout</button>
+        <button class="button back-button" id="backButton">Go Back</button>
+        <button class="button update-button" id="updateButton">Edit</button>
+    </div>
+</div>
+
+<div class="content-wrapper">
+    <div class="container">
+        <h2 id="patient-id-title"></h2>
+        <div class="loading" id="loading"></div>
+        <div id="ehrContent"></div>
+    </div>
+</div>
+
+<script>
+    let isEditing = false;
+    let ehrData = {};
+    const fields = [
+        'diagnosis', 'treatment', 'medications', 'doctorNotes',
+        'patientHistory', 'allergies', 'labResults', 'imagingReports',
+        'vitalSigns', 'familyHistory', 'lifestyleFactors', 'immunizations',
+        'carePlan', 'followUpInstructions'
+    ];
+
+    function showLoading() {
+        document.getElementById('loading').style.display = 'block';
+    }
+
+    function hideLoading() {
+        document.getElementById('loading').style.display = 'none';
+    }
+
+    function capitalize(str) {
+        return str.replace(/([A-Z])/g, ' $1')
+                 .replace(/^./, str => str.toUpperCase());
+    }
+
+    function renderField(field) {
+        return `
+            <div class="field-container">
+                <div class="field-label">${capitalize(field)}</div>
+                ${isEditing
+                    ? `<textarea id="${field}">${ehrData[field] || ''}</textarea>`
+                    : `<div class="field-content">${ehrData[field] || 'No data available'}</div>`
+                }
+            </div>
+        `;
+    }
+
+    function renderEHR() {
+        const content = fields.map(renderField).join('');
+        document.getElementById('ehrContent').innerHTML = content;
+    }
+
+    async function fetchEHR() {
+        showLoading();
+        try {
+            const patientId = localStorage.getItem('patientId');
+            const response = await fetch(`/fabric/doctor/view-ehr?patientId=${patientId}`, {
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('jwt')}`
+                }
+            });
+
+            if (!response.ok) throw new Error('Failed to fetch EHR');
+            ehrData = await response.json();
+            renderEHR();
+        } catch (error) {
+            console.error('Error:', error);
+            alert('Failed to load EHR data');
+        } finally {
+            hideLoading();
+        }
+    }
+
+    async function updateEHR() {
+        if (!isEditing) return;
+
+        const updatedData = {};
+        fields.forEach(field => {
+            updatedData[field] = document.getElementById(field).value;
+        });
+
+        try {
+            const patientId = localStorage.getItem('patientId');
+            const response = await fetch(`/fabric/doctor/update-ehr?patientId=${patientId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('jwt')}`
+                },
+                body: JSON.stringify({
+                    patientId,
+                    ...updatedData
+                })
+            });
+
+            if (!response.ok) throw new Error('Failed to update EHR');
+            ehrData = updatedData;
+            isEditing = false;
+            document.getElementById('updateButton').textContent = 'Edit';
+            renderEHR();
+            alert('EHR updated successfully!');
+        } catch (error) {
+            console.error('Error:', error);
+            alert('Failed to update EHR');
+        }
+    }
+
+    document.getElementById('updateButton').addEventListener('click', async () => {
+        if (isEditing) {
+            await updateEHR();
+        } else {
+            isEditing = true;
+            document.getElementById('updateButton').textContent = 'Save';
+            renderEHR();
+        }
+    });
+
+    document.getElementById('logoutButton').addEventListener('click', () => {
+        localStorage.removeItem('jwt');
+        window.location.href = '/login.html';
+    });
+
+    document.getElementById('backButton').addEventListener('click', () => {
+        window.location.href = '/doctor.html';
+    });
+
+    document.addEventListener('DOMContentLoaded', () => {
+        const patientId = localStorage.getItem('patientId');
+        document.getElementById('patient-id-title').textContent = `EHR for Patient ID: ${patientId}`;
+        fetchEHR();
+    });
+</script>
+</body>
+</html>

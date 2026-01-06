@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register & Login</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="index.css">
+    <script src="https://cdn.jsdelivr.net/npm/jwt-decode@3.1.2/build/jwt-decode.min.js"></script>
+    <script src="admin.js" defer></script>
+</head>
+<body>
+    <div class="logout-container">
+        <button class="logout-button" id="logoutButton">Logout</button>
+    </div>
+
+    <div class="container" id="signIn">
+        <h1 class="form-title">Add User</h1>
+        <form id="registerForm" enctype="multipart/form-data">
+            <div class="input-group">
+                <i class="fas fa-user"></i>
+                <input type="text" name="username" id="username" placeholder="user name" required>
+                <label for="username">User id</label>
+            </div>
+            <div class="input-group">
+                <i class="fas fa-lock"></i>
+                <input type="password" name="password" id="password" placeholder="password" required>
+                <label for="password">Password</label>
+            </div>
+            <div id="ehrUploadContainer" style="display: none;">
+                <div class="input-group">
+                    <i class="fas fa-file-upload"></i>
+                    <input type="file" id="file" name="file" accept=".pdf">
+                    <label for="file">Upload PDF</label>
+                </div>
+            </div>
+            <button type="submit" class="btn">Add</button>
+        </form>
+    </div>
+
+    <!-- Loading Animation -->
+    <div class="loading" id="loading" style="display: none;"></div>
+
+    <script src="admin.js"></script>
+</body>
+</html>

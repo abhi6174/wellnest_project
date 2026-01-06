@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EHR Patient Records</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        /* Background and Page Styling */
+        body {
+            font-family: Arial, sans-serif;
+            background-image: linear-gradient(to right, #83a4d4, #b6fbff);
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            color: #333;
+        }
+
+        /* Navigation Bar */
+        .navbar {
+            width: 100%;
+            background-color: #7791a8;
+            padding: 15px 0;
+            text-align: center;
+            color: white;
+            font-size: 20px;
+            font-weight: bold;
+            position: relative;
+        }
+
+        /* Logout Button */
+        .logout-container {
+            position: absolute;
+            top: 15px;
+            right: 20px;
+        }
+
+        .logout-button {
+            padding: 5px 10px;
+            font-size: 14px;
+            background-color: #f44336;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .logout-button:hover {
+            background-color: #d32f2f;
+        }
+
+        /* Main Content Wrapper */
+        .content-wrapper {
+            width: 750px;
+            margin-top: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        /* Content Container Styling */
+        .container {
+            background-color: #ffffff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
+            text-align: center;
+        }
+
+        /* Dropdown and Button Styling */
+        select, button {
+            padding: 10px;
+            font-size: 16px;
+            width: 100%;
+            margin: 10px 0;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+            cursor: pointer;
+            max-width: 200px;
+        }
+
+        .status-button {
+            background-color: #0073e6;
+            color: white;
+            border: none;
+        }
+
+        .status-button:hover {
+            background-color: #005bb5;
+        }
+
+        .refresh-button {
+            background-color: #0073e6;
+            color: white;
+            border: none;
+            margin-top: 10px;
+        }
+
+        .refresh-button:hover {
+            background-color: #005bb5;
+        }
+
+        /* Loading Animation */
+        .loading {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #0073e6;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            display: none;
+            margin: 20px auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Doctor Actions Row */
+        .doctor-actions-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            justify-content: space-between;
+            margin-top: 10px;
+        }
+
+        .doctor-id-display {
+            font-weight: bold;
+            color: #333;
+            margin-right: auto;
+            padding-left: 10px;
+        }
+
+        .doctor-button {
+            padding: 10px;
+            font-size: 14px;
+            color: white;
+            border: none;
+            cursor: pointer;
+            border-radius: 4px;
+            flex: 1;
+            text-align: center;
+            max-width: 150px;
+        }
+
+        .accept-button {
+            background-color: #4CAF50;
+        }
+
+        .accept-button:hover {
+            background-color: #45a049;
+        }
+
+        .revoke-button {
+            background-color: #f44336;
+        }
+
+        .revoke-button:hover {
+            background-color: #d32f2f;
+        }
+
+        .view-button {
+            background-color: #0073e6;
+        }
+
+        .view-button:hover {
+            background-color: #005bb5;
+        }
+
+        /* Hide Doctor Actions and Accepted Doctors initially */
+        #doctor-container, #doctor-list, #pending-list {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+<!-- Navigation Bar -->
+<div class="navbar">
+    Electronic Health Record System
+    <div class="logout-container">
+        <button class="logout-button" id="logoutButton">Logout</button>
+    </div>
+</div>
+
+<!-- Main Content Wrapper -->
+<div class="content-wrapper">
+
+    <!-- Patient Dashboard Container -->
+    <div class="container" id="status-container">
+        <h2>Patient Dashboard</h2>
+        <form id="status-form" action="" method="POST">
+            <label for="status">Choose Status:</label>
+            <select name="status" id="status" required onchange="toggleDoctorActions()">
+                <option value="Accepted">Accepted</option>
+                <option value="Pending">Pending</option>
+            </select>
+        </form>
+        <button class="refresh-button" onclick="refreshData()">Refresh</button>
+        <div class="loading" id="loading"></div>
+    </div>
+
+    <!-- Accepted Doctors Container -->
+    <div class="container" id="doctor-list">
+        <h2>Accepted Doctors</h2>
+        <div id="doctor-list-content"></div>
+    </div>
+
+    <!-- Pending Requests Container -->
+    <div class="container" id="pending-list">
+        <h2>Pending Requests</h2>
+        <div id="pending-list-content"></div>
+    </div>
+
+    <!-- Doctor Actions Container -->
+    <div class="container" id="doctor-container">
+        <h2>Doctor Actions</h2>
+        <div class="doctor-actions-row">
+        </div>
+    </div>
+
+</div>
+
+<script>
+    let dataFetched = {
+        accepted: false,
+        pending: false
+    }; // Flags to check if data has already been fetched
+
+    // Toggle visibility of Doctor Actions and fetch accepted doctors based on status selection
+    function toggleDoctorActions() {
+        const status = document.getElementById("status").value;
+        const doctorContainer = document.getElementById("doctor-container");
+        const doctorList = document.getElementById("doctor-list");
+        const pendingList = document.getElementById("pending-list");
+
+        if (status === "Accepted") {
+            doctorContainer.style.display = "none";
+            doctorList.style.display = "block";
+            pendingList.style.display = "none";
+            if (!dataFetched.accepted) {
+                fetchDoctorData();
+            }
+        } else if (status === "Pending") {
+            doctorContainer.style.display = "none";
+            doctorList.style.display = "none";
+            pendingList.style.display = "block";
+            if (!dataFetched.pending) {
+                fetchPendingRequests();
+            }
+        } else {
+            doctorContainer.style.display = "none";
+            doctorList.style.display = "none";
+            pendingList.style.display = "none";
+        }
+    }
+
+    // Handle Accept and Revoke button actions
+    function handleAction(action, doctorId) {
+        alert(`Doctor Action: ${action} for ${doctorId}`);
+        // Add server-side handling for actions
+        console.log(action);
+        fetch(`/fabric/patient/request/${doctorId}?status=${action}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('jwt')}` // Assuming JWT is stored in localStorage
+            }
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            toggleDoctorActions(); // Refresh the doctor actions list
+            return response;
+        })
+        .then(data => {
+            console.log(data);
+            fetchPendingRequests(); // Refresh the pending requests list
+        })
+        .catch(error => {
+            console.error('Error handling doctor action:', error);
+        });
+    }
+
+    // Fetch accepted doctor data
+    function fetchDoctorData() {
+        const loading = document.getElementById('loading');
+        loading.style.display = 'block'; // Show loading animation
+        fetch('/fabric/patient/accepted', {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('jwt')}` // Assuming JWT is stored in localStorage
+            }
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log(data);
+            const doctorListContent = document.getElementById('doctor-list-content');
+            doctorListContent.innerHTML = ''; // Clear any existing content
+            data.forEach(doctorId => {
+                const doctorDiv = document.createElement('div');
+                doctorDiv.classList.add('container');
+
+                const doctorActionsRow = document.createElement('div');
+                doctorActionsRow.classList.add('doctor-actions-row');
+
+                const doctorIdDiv = document.createElement('div');
+                doctorIdDiv.classList.add('doctor-id-display');
+                doctorIdDiv.textContent = `Doctor ID: ${doctorId}`;
+
+                const viewButton = document.createElement('button');
+                viewButton.classList.add('doctor-button', 'view-button');
+                viewButton.textContent = 'View History';
+                viewButton.onclick = () => viewHistory(doctorId);
+
+                const revokeButton = document.createElement('button');
+                revokeButton.classList.add('doctor-button', 'revoke-button');
+                revokeButton.textContent = 'Revoke';
+                revokeButton.onclick = () => handleAction('Revoke', doctorId);
+
+                doctorActionsRow.appendChild(doctorIdDiv);
+                doctorActionsRow.appendChild(viewButton);
+                doctorActionsRow.appendChild(revokeButton);
+
+                doctorDiv.appendChild(doctorActionsRow);
+                doctorListContent.appendChild(doctorDiv);
+            });
+            dataFetched.accepted = true; // Set the flag to true after data is fetched
+        })
+        .catch(error => {
+            console.error('Error fetching doctor data:', error);
+        })
+        .finally(() => {
+            loading.style.display = 'none'; // Hide loading animation
+        });
+    }
+
+    // Fetch pending requests
+    function fetchPendingRequests() {
+        const loading = document.getElementById('loading');
+        loading.style.display = 'block'; // Show loading animation
+
+        fetch('/fabric/patient/request', {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('jwt')}` // Assuming JWT is stored in localStorage
+            }
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log(data);
+            const pendingListContent = document.getElementById('pending-list-content');
+            pendingListContent.innerHTML = ''; // Clear any existing content
+            data.forEach(doctorId => {
+                const doctorDiv = document.createElement('div');
+                doctorDiv.classList.add('container');
+
+                const doctorActionsRow = document.createElement('div');
+                doctorActionsRow.classList.add('doctor-actions-row');
+
+                const doctorIdDiv = document.createElement('div');
+                doctorIdDiv.classList.add('doctor-id-display');
+                doctorIdDiv.textContent = `Doctor ID: ${doctorId}`;
+
+                const acceptButton = document.createElement('button');
+                acceptButton.classList.add('doctor-button', 'accept-button');
+                acceptButton.textContent = 'Accept';
+                acceptButton.onclick = () => handleAction('Accepted', doctorId);
+
+                const rejectButton = document.createElement('button');
+                rejectButton.classList.add('doctor-button', 'revoke-button');
+                rejectButton.textContent = 'Reject';
+                rejectButton.onclick = () => handleAction('Rejected', doctorId);
+
+                doctorActionsRow.appendChild(doctorIdDiv);
+                doctorActionsRow.appendChild(acceptButton);
+                doctorActionsRow.appendChild(rejectButton);
+
+                doctorDiv.appendChild(doctorActionsRow);
+                pendingListContent.appendChild(doctorDiv);
+            });
+            dataFetched.pending = true; // Set the flag to true after data is fetched
+        })
+        .catch(error => {
+            console.error('Error fetching pending requests:', error);
+        })
+        .finally(() => {
+            loading.style.display = 'none'; // Hide loading animation
+        });
+    }
+
+    // Function to handle View History button click
+    function viewHistory(doctorId) {
+        const loading = document.getElementById('loading');
+        loading.style.display = 'block';
+        fetch(`/fabric/patient/history/${doctorId}`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('jwt')}` // Assuming JWT is stored in localStorage
+            }
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.json();
+        })
+        .then(historyData => {
+            // Store the history data in localStorage and navigate to the history page
+            localStorage.setItem('historyData', JSON.stringify(historyData));
+            localStorage.setItem('doctorId', doctorId);
+            window.location.href = '/history.html';
+        })
+        .catch(error => {
+            console.error('Error fetching history data:', error);
+        })
+        .finally(() => {
+            loading.style.display = 'none'; // Hide loading animation
+        });
+    }
+
+    // Refresh data based on the selected status
+    function refreshData() {
+        const status = document.getElementById("status").value;
+        if (status === "Accepted") {
+            dataFetched.accepted = false;
+            fetchDoctorData();
+        } else if (status === "Pending") {
+            dataFetched.pending = false;
+            fetchPendingRequests();
+        }
+    }
+
+    // Call the function to fetch and display doctor data when the page loads
+    document.addEventListener('DOMContentLoaded', () => {
+        toggleDoctorActions();
+    });
+
+    // Handle logout button click
+    document.getElementById('logoutButton').addEventListener('click', function() {
+        localStorage.removeItem('jwt'); // Remove the JWT from local storage
+        window.location.href = '/login.html'; // Redirect to the login page
+    });
+</script>
+
+</body>
+</html>
