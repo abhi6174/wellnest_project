@@ -29,26 +29,57 @@ const App = () => {
     palette: {
       mode: darkMode ? 'dark' : 'light',
       primary: {
-        main: '#4A90E2',
+        main: '#0284c7', // primary-500
+        light: '#38bdf8', // primary-300
+        dark: '#0369a1', // primary-600
+        contrastText: '#ffffff',
       },
       secondary: {
-        main: '#34495E',
+        main: '#14b8a6', // secondary-500
+        light: '#2dd4bf',
+        dark: '#0f766e',
+        contrastText: '#ffffff',
       },
       background: {
-        default: darkMode ? '#121212' : '#F4F6F8',
-        paper: darkMode ? '#1E1E1E' : '#FFFFFF',
+        default: darkMode ? '#0f172a' : '#f8fafc', // surface-900 : surface-50
+        paper: darkMode ? '#1e293b' : '#ffffff', // surface-800 : white
       },
       text: {
-        primary: darkMode ? '#FFFFFF' : '#2C3E50',
-        secondary: darkMode ? '#B0BEC5' : '#7F8C8D',
+        primary: darkMode ? '#f1f5f9' : '#334155', // surface-100 : surface-700
+        secondary: darkMode ? '#94a3b8' : '#64748b', // surface-400 : surface-500
       },
     },
     typography: {
-      fontFamily: "'Roboto', sans-serif",
-      fontSize: 18,
+      fontFamily: "'Inter', sans-serif",
+      h1: { fontFamily: "'Outfit', sans-serif", fontWeight: 700 },
+      h2: { fontFamily: "'Outfit', sans-serif", fontWeight: 700 },
+      h3: { fontFamily: "'Outfit', sans-serif", fontWeight: 600 },
+      h4: { fontFamily: "'Outfit', sans-serif", fontWeight: 600 },
+      h5: { fontFamily: "'Outfit', sans-serif", fontWeight: 600 },
+      h6: { fontFamily: "'Outfit', sans-serif", fontWeight: 600 },
+      button: { textTransform: 'none', fontWeight: 600 },
     },
     shape: {
-      borderRadius: 10,
+      borderRadius: 12,
+    },
+    components: {
+      MuiButton: {
+        styleOverrides: {
+          root: {
+            boxShadow: 'none',
+            '&:hover': {
+              boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
+            },
+          },
+        },
+      },
+      MuiPaper: {
+        styleOverrides: {
+          root: {
+            backgroundImage: 'none',
+          },
+        },
+      },
     },
   });
 
@@ -64,13 +95,13 @@ const App = () => {
   const checkAuth = () => {
     const token = localStorage.getItem('jwt');
     setLoading(true);
-    
+
     if (token) {
       const username = localStorage.getItem('username');
       const mspId = localStorage.getItem('mspId');
-      
+
       setAuthenticated(true);
-      
+
       if (username === 'admin') {
         setUserRole('admin');
       } else if (mspId === 'Org1MSP') {
@@ -82,7 +113,7 @@ const App = () => {
       setAuthenticated(false);
       setUserRole(null);
     }
-    
+
     setLoading(false);
   };
 
@@ -94,76 +125,70 @@ const App = () => {
     <ThemeProvider theme={theme}>
       <CssBaseline />
       <Router>
-        <AppBar position="fixed" color="primary">
-          <Toolbar>
-            <Typography variant="h6" sx={{ flexGrow: 1 }}>
-              WellNest
-            </Typography>
-          </Toolbar>
-        </AppBar>
+
         <Routes>
           {/* Public routes */}
           <Route path="/" element={<Home />} />
-          <Route 
-            path="/login" 
+          <Route
+            path="/login"
             element={
-              authenticated ? 
-                <Navigate to={getRedirectPath(userRole)} replace /> : 
+              authenticated ?
+                <Navigate to={getRedirectPath(userRole)} replace /> :
                 <Login />
-            } 
-          />
-          
-          {/* Protected routes */}
-          <Route 
-            path="/admin" 
-            element={
-              authenticated && userRole === 'admin' ? 
-                <AdminDashboard /> : 
-                <Navigate to="/login" replace />
-            } 
-          />
-          <Route 
-            path="/doctor" 
-            element={
-              authenticated && userRole === 'doctor' ? 
-                <DoctorDashboard /> : 
-                <Navigate to="/login" replace />
-            } 
-          />
-          <Route 
-            path="/ehr" 
-            element={
-              authenticated ? 
-                <EHRView /> : 
-                <Navigate to="/login" replace />
-            } 
+            }
           />
 
-          <Route 
-            path="/ehr/:patientId" 
+          {/* Protected routes */}
+          <Route
+            path="/admin"
             element={
-              authenticated && userRole === 'doctor' ? 
-                <EHRViewer /> : 
+              authenticated && userRole === 'admin' ?
+                <AdminDashboard /> :
                 <Navigate to="/login" replace />
-            } 
+            }
           />
-          <Route 
-            path="/patient" 
+          <Route
+            path="/doctor"
             element={
-              authenticated && userRole === 'patient' ? 
-                <PatientDashboard /> : 
+              authenticated && userRole === 'doctor' ?
+                <DoctorDashboard /> :
                 <Navigate to="/login" replace />
-            } 
+            }
           />
-          <Route 
-            path="/history/:doctorId" 
+          <Route
+            path="/ehr"
             element={
-              authenticated && userRole === 'patient' ? 
-                <DoctorHistory /> : 
+              authenticated ?
+                <EHRView /> :
                 <Navigate to="/login" replace />
-            } 
+            }
           />
-          
+
+          <Route
+            path="/ehr/:patientId"
+            element={
+              authenticated && userRole === 'doctor' ?
+                <EHRViewer /> :
+                <Navigate to="/login" replace />
+            }
+          />
+          <Route
+            path="/patient"
+            element={
+              authenticated && userRole === 'patient' ?
+                <PatientDashboard /> :
+                <Navigate to="/login" replace />
+            }
+          />
+          <Route
+            path="/history/:doctorId"
+            element={
+              authenticated && userRole === 'patient' ?
+                <DoctorHistory /> :
+                <Navigate to="/login" replace />
+            }
+          />
+
           {/* 404 route */}
           <Route path="*" element={<NotFound />} />
         </Routes>

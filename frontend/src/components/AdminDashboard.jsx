@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import Navbar from './Navbar';
 import { useNavigate } from 'react-router-dom';
 import {
   Box,
@@ -60,17 +61,18 @@ const AdminDashboard = () => {
   useEffect(() => {
     const savedUsers = JSON.parse(localStorage.getItem('registeredUsers') || '[]');
     setRegisteredUsers(savedUsers);
-    
+
     // Get admin's organization from localStorage
     const orgId = localStorage.getItem('mspId');
     setAdminOrg(orgId);
   }, []);
 
   // colours
+  // colours - Updated to match new theme
   const orgColors = {
-    primary: adminOrg === 'Org1MSP' ? '#3C4A51' : '#3C4A51', // Header & primary buttons
-    secondary: adminOrg === 'Org1MSP' ? '#000' : '#000', // Footer & secondary elements
-    accent: adminOrg === 'Org1MSP' ? '#732121' : '#732121', // Accents & highlights
+    primary: theme.palette.primary.main, // Header & primary buttons
+    secondary: theme.palette.secondary.main, // Footer & secondary elements
+    accent: theme.palette.primary.dark, // Accents & highlights
   };
 
   const handleLogout = () => {
@@ -81,7 +83,7 @@ const AdminDashboard = () => {
     localStorage.removeItem('patientId');
     localStorage.removeItem('doctorId');
     localStorage.removeItem('historyData');
-    
+
     // Force immediate navigation to login
     window.location.href = '/login';
   };
@@ -107,7 +109,7 @@ const AdminDashboard = () => {
       if (!formData.username || !formData.password) {
         throw new Error('Please fill in all required fields');
       }
-      
+
       // Only require file for patient registration (Org2MSP)
       if (adminOrg === 'Org2MSP' && !formData.file && !fileName) {
         throw new Error('Please upload a JSON file for patient record');
@@ -117,7 +119,7 @@ const AdminDashboard = () => {
       const requestFormData = new FormData();
       requestFormData.append("username", formData.username);
       requestFormData.append("password", formData.password);
-      
+
       // Only append file for patient organization
       if (adminOrg === 'Org2MSP' && formData.file) {
         requestFormData.append("file", formData.file);
@@ -146,7 +148,7 @@ const AdminDashboard = () => {
       // Handle successful response
       const responseData = await response.text();
       console.log("Registration successful:", responseData);
-      
+
       // Save to local storage for UI demonstration
       const newUser = {
         id: Date.now(),
@@ -155,11 +157,11 @@ const AdminDashboard = () => {
         createdAt: new Date().toISOString(),
         fileAttached: adminOrg === 'Org2MSP' && (!!formData.file || !!fileName)
       };
-      
+
       const updatedUsers = [...registeredUsers, newUser];
       setRegisteredUsers(updatedUsers);
       localStorage.setItem('registeredUsers', JSON.stringify(updatedUsers));
-      
+
       // Reset form
       setFormData({
         username: '',
@@ -168,7 +170,7 @@ const AdminDashboard = () => {
       });
       setFileName('');
       setSuccess('User registered successfully!');
-      
+
     } catch (error) {
       console.error('Registration Error:', error);
       setError(error.message || 'Failed to register user. Please try again.');
@@ -189,99 +191,29 @@ const AdminDashboard = () => {
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', bgcolor: '#E1E2E4' }}>
-      <AppBar 
-        position="fixed" 
-        elevation={0} 
-        sx={{ 
-          bgcolor: orgColors.primary, 
-          borderBottom: `1px solid ${theme.palette.divider}` 
-        }}
-      >
-        <Toolbar>
-          <Box 
-            sx={{ 
-              display: 'flex', 
-              alignItems: 'center', 
-              color: orgColors.accent 
-            }}
-          >
-            <AdminIcon sx={{ mr: 1, fontSize: 28,color :'#fff' }} />
-            <Typography 
-              variant="h6" 
-              component="div" 
-              sx={{ 
-                fontWeight: 600, 
-                color: '#FFFFFF'
-              }}
-            >
-              WellNest Admin
-            </Typography>
-          </Box>
-          
-          <Box sx={{ flexGrow: 1 }} />
-          
-          <Box sx={{ 
-            display: 'flex', 
-            alignItems: 'center',
-            '& .MuiButton-root': {
-              borderRadius: '50px',
-              px: 3
-            }
-          }}>
-            <Chip 
-              icon={<BusinessIcon/>} 
-              label={adminOrg === 'Org1MSP' ? 'Doctor Organization' : 'Patient Organization'} 
-              sx={{ 
-                mr: 2, 
-                height: 40, 
-                px: 1,
-                color: 'white',
-                bgcolor: orgColors.accent,
-                '& .MuiChip-icon': {
-                  color: 'white',
-                },
-              }}
-            />
-            <Button 
-              variant="contained"
-              onClick={handleLogout}
-              startIcon={<LogoutIcon />}
-              sx={{ 
-                boxShadow: 'none',
-                fontWeight: 500,
-                bgcolor: alpha('#ffffff', 0.2),
-                '&:hover': {
-                  bgcolor: alpha('#ffffff', 0.3),
-                }
-              }}
-            >
-              Sign Out
-            </Button>
-          </Box>
-        </Toolbar>
-      </AppBar>
-      
-      <Container maxWidth="lg" sx={{ mt: 12, mb: 4, flex: 1 }}>
-        <Card 
-          elevation={0} 
-          sx={{ 
-            borderRadius: 3, 
+      <Navbar title={`Admin - ${adminOrg === 'Org1MSP' ? 'Doctor Org' : 'Patient Org'}`} username={formData.username || 'Admin'} onLogout={handleLogout} />
+
+      <Container maxWidth="lg" sx={{ mt: 4, mb: 4, flex: 1 }}>
+        <Card
+          elevation={0}
+          sx={{
+            borderRadius: 3,
             overflow: 'hidden',
             border: `1px solid ${alpha(orgColors.accent, 0.1)}`,
           }}
         >
-          <Box 
-            sx={{ 
-              py: 3, 
-              px: 4, 
+          <Box
+            sx={{
+              py: 3,
+              px: 4,
               bgcolor: orgColors.accent,
               color: '#fff'
             }}
           >
-            <Typography 
-              variant="h5" 
-              component="h2" 
-              sx={{ 
+            <Typography
+              variant="h5"
+              component="h2"
+              sx={{
                 fontWeight: 600,
                 display: 'flex',
                 alignItems: 'center',
@@ -295,15 +227,15 @@ const AdminDashboard = () => {
               Complete the form below to add a new user to the {adminOrg === 'Org1MSP' ? 'Doctor' : 'Patient'} organization.
             </Typography>
           </Box>
-          
+
           <CardContent sx={{ p: 4 }}>
             {/* Organization Info */}
-            <Alert 
-              severity="info" 
+            <Alert
+              severity="info"
               variant="outlined"
               icon={<SecurityIcon />}
-              sx={{ 
-                mb: 4, 
+              sx={{
+                mb: 4,
                 borderRadius: 2,
                 '& .MuiAlert-message': { py: 1 },
                 borderColor: orgColors.accent,
@@ -316,13 +248,13 @@ const AdminDashboard = () => {
               You are registered as an admin for <strong>{adminOrg === 'Org1MSP' ? 'Doctor Organization (Org1MSP)' : 'Patient Organization (Org2MSP)'}</strong>.
               You can only add users to your organization.
             </Alert>
-            
+
             {error && (
-              <Alert 
-                severity="error" 
+              <Alert
+                severity="error"
                 variant="filled"
-                sx={{ 
-                  mb: 4, 
+                sx={{
+                  mb: 4,
                   borderRadius: 2,
                   '& .MuiAlert-message': { py: 1 }
                 }}
@@ -330,7 +262,7 @@ const AdminDashboard = () => {
                 {error}
               </Alert>
             )}
-            
+
             <Box component="form" onSubmit={handleSubmit}>
               <Grid container spacing={3}>
                 <Grid item xs={12} md={6}>
@@ -396,7 +328,7 @@ const AdminDashboard = () => {
                     }}
                   />
                 </Grid>
-                
+
                 {/* Only show file upload for patient organization admins */}
                 {adminOrg === 'Org2MSP' && (
                   <Grid item xs={12}>
@@ -424,7 +356,7 @@ const AdminDashboard = () => {
                         hidden
                         onChange={handleFileChange}
                       />
-                      
+
                       {!fileName ? (
                         <>
                           <Box sx={{ mb: 2 }}>
@@ -436,15 +368,15 @@ const AdminDashboard = () => {
                           <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
                             Drag and drop a JSON file here, or click to browse
                           </Typography>
-                          
+
                           <label htmlFor="file-upload">
                             <Button
                               variant="contained"
                               component="span"
                               startIcon={<UploadIcon />}
-                              sx={{ 
-                                px: 4, 
-                                py: 1.5, 
+                              sx={{
+                                px: 4,
+                                py: 1.5,
                                 borderRadius: 50,
                                 boxShadow: 'none',
                                 bgcolor: orgColors.accent,
@@ -456,24 +388,24 @@ const AdminDashboard = () => {
                               Browse Files
                             </Button>
                           </label>
-                          
-                          <Typography 
-                            variant="caption" 
-                            display="block" 
-                            color="text.secondary" 
+
+                          <Typography
+                            variant="caption"
+                            display="block"
+                            color="text.secondary"
                             sx={{ mt: 2 }}
                           >
                             JSON files only, max 10MB
                           </Typography>
                         </>
                       ) : (
-                        <Box sx={{ 
+                        <Box sx={{
                           py: 1,
                           display: 'flex',
                           flexDirection: 'column',
                           alignItems: 'center'
                         }}>
-                          <Box sx={{ 
+                          <Box sx={{
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
@@ -483,21 +415,21 @@ const AdminDashboard = () => {
                             bgcolor: alpha(orgColors.accent, 0.1),
                             mb: 2
                           }}>
-                            <AssignmentIcon 
-                              sx={{ 
-                                fontSize: 36, 
-                                color: orgColors.accent 
-                              }} 
+                            <AssignmentIcon
+                              sx={{
+                                fontSize: 36,
+                                color: orgColors.accent
+                              }}
                             />
                           </Box>
-                          
+
                           <Typography variant="h6" gutterBottom>
                             File Selected
                           </Typography>
-                          
-                          <Chip 
+
+                          <Chip
                             label={fileName}
-                            sx={{ 
+                            sx={{
                               px: 1,
                               mt: 1,
                               mb: 2,
@@ -514,18 +446,18 @@ const AdminDashboard = () => {
                             }}
                             onDelete={() => {
                               setFileName('');
-                              setFormData({...formData, file: null});
+                              setFormData({ ...formData, file: null });
                             }}
                           />
-                          
+
                           <label htmlFor="file-upload">
                             <Button
                               variant="outlined"
                               component="span"
                               size="small"
-                              sx={{ 
-                                borderRadius: 50, 
-                                borderColor: orgColors.accent, 
+                              sx={{
+                                borderRadius: 50,
+                                borderColor: orgColors.accent,
                                 color: orgColors.accent,
                                 '&:hover': {
                                   borderColor: orgColors.accent,
@@ -542,7 +474,7 @@ const AdminDashboard = () => {
                     </Paper>
                   </Grid>
                 )}
-                
+
                 <Grid item xs={12}>
                   <Button
                     type="submit"
@@ -550,8 +482,8 @@ const AdminDashboard = () => {
                     size="large"
                     fullWidth
                     disabled={loading}
-                    sx={{ 
-                      py: 1.8, 
+                    sx={{
+                      py: 1.8,
                       mt: 2,
                       borderRadius: 2,
                       fontWeight: 600,
@@ -576,14 +508,14 @@ const AdminDashboard = () => {
           </CardContent>
         </Card>
       </Container>
-      
+
       {/* Footer */}
-      <Box 
-        component="footer" 
-        sx={{ 
-          py: 3, 
-          bgcolor: orgColors.secondary, 
-          borderTop: '1px solid', 
+      <Box
+        component="footer"
+        sx={{
+          py: 3,
+          bgcolor: orgColors.secondary,
+          borderTop: '1px solid',
           borderColor: theme.palette.divider,
           mt: 'auto'
         }}
@@ -594,11 +526,11 @@ const AdminDashboard = () => {
           </Typography>
         </Container>
       </Box>
-      
+
       {/* Success Notification */}
-      <Snackbar 
-        open={!!success} 
-        autoHideDuration={6000} 
+      <Snackbar
+        open={!!success}
+        autoHideDuration={6000}
         onClose={handleCloseSnackbar}
         anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
       >
@@ -606,7 +538,7 @@ const AdminDashboard = () => {
           onClose={handleCloseSnackbar}
           severity="success"
           variant="filled"
-          sx={{ 
+          sx={{
             width: '100%',
             borderRadius: 2,
             boxShadow: '0 4px 20px rgba(0,0,0,0.1)'
@@ -625,11 +557,11 @@ const AdminDashboard = () => {
           {success}
         </Alert>
       </Snackbar>
-      
+
       {/* Error Notification (for snackbar errors, not form validation) */}
-      <Snackbar 
-        open={!!error && !error.includes('Please fill')} 
-        autoHideDuration={6000} 
+      <Snackbar
+        open={!!error && !error.includes('Please fill')}
+        autoHideDuration={6000}
         onClose={handleCloseSnackbar}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
       >
@@ -637,7 +569,7 @@ const AdminDashboard = () => {
           onClose={handleCloseSnackbar}
           severity="error"
           variant="filled"
-          sx={{ 
+          sx={{
             width: '100%',
             borderRadius: 2,
             boxShadow: '0 4px 20px rgba(0,0,0,0.1)'

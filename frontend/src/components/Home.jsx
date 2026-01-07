@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { FaShieldAlt, FaLock, FaTabletAlt, FaHeartbeat, FaCheckCircle, FaUserPlus, FaExchangeAlt } from 'react-icons/fa';
-    import { IconButton } from '@mui/material';
+import { IconButton } from '@mui/material';
 import { Brightness4 as DarkModeIcon, Brightness7 as LightModeIcon } from '@mui/icons-material';
 
 const Home = ({ darkMode, toggleDarkMode }) => {
@@ -9,55 +9,76 @@ const Home = ({ darkMode, toggleDarkMode }) => {
     {
       title: 'Secure Data Management',
       description: 'Blockchain ensures tamper-proof medical records with comprehensive audit trails.',
-      icon: <FaShieldAlt className="text-primary" style={{ fontSize: '1.5rem' }} />
+      icon: <FaShieldAlt />
     },
     {
       title: 'Enhanced Privacy',
       description: 'Patients retain complete ownership and granular control over their medical data.',
-      icon: <FaLock className="text-primary" style={{ fontSize: '1.5rem' }} />
+      icon: <FaLock />
     },
     {
       title: 'Seamless Access',
       description: 'Healthcare providers access records with patient consent through a streamlined process.',
-      icon: <FaTabletAlt className="text-primary" style={{ fontSize: '1.5rem' }} />
+      icon: <FaTabletAlt />
     }
   ];
 
   return (
     <div className="d-flex flex-column min-vh-100">
-      {/* Navigation */}
-      <nav className="navbar navbar-expand-lg navbar-dark bg-dark py-3" style={{ width: '100%' }}>
-        <div className="container">
-          <Link className="navbar-brand d-flex align-items-center" to="/">
-            <FaHeartbeat className="me-2" style={{ fontSize: '1.5rem' }} />
-            <span className="fw-bold" style={{ fontSize: '1.25rem' }}>WellNest</span>
+      {/* Search-friendly & Accessible Navigation */}
+      <nav className="navbar-glass py-3">
+        <div className="container d-flex align-items-center justify-content-between">
+          <Link className="d-flex align-items-center gap-2" to="/">
+            <div className="icon-box mb-0" style={{background: 'var(--primary-600)', color: 'white', width: '2.5rem', height: '2.5rem'}}>
+                 <FaHeartbeat size={20} />
+            </div>
+            <span className="fw-bold" style={{ fontSize: '1.5rem', fontFamily: 'var(--font-display)', color: 'var(--primary-900)' }}>
+              WellNest
+            </span>
           </Link>
-          <IconButton color="inherit" onClick={toggleDarkMode} className="ms-auto">
-            {darkMode ? <LightModeIcon /> : <DarkModeIcon />}
-          </IconButton>
+          
+          <div className="d-flex align-items-center gap-3">
+             <IconButton color="inherit" onClick={toggleDarkMode}>
+              {darkMode ? <LightModeIcon /> : <DarkModeIcon />}
+            </IconButton>
+            <Link to="/login" className="btn-modern btn-primary-modern text-decoration-none">
+              Sign In
+            </Link>
+          </div>
         </div>
       </nav>
 
-      {/* Hero Section */}
-      {/* 1st part with get started*/}
-      <header className="py-5 text-white" style={{ background: 'linear-gradient(120deg, #2C3E50 30%, #3498DB 90%)' }}>
-        <div className="container">
-          <div className="row align-items-center g-4">
-            <div className="col-lg-7">
-              <h1 className="fw-bold mb-3" style={{ fontSize: '2.25rem' }}>Secure Health Records on Blockchain</h1>
-              <p className="mb-4" style={{ fontSize: '1.125rem' }}>
-                WellNest provides a decentralized platform for managing Electronic Health Records (EHR)
-                with security, privacy, and patient control.
+      {/* Modern Hero Section */}
+      <header className="py-5 overflow-hidden position-relative">
+        <div className="container position-relative z-2">
+          <div className="row align-items-center g-5 py-5">
+            <div className="col-lg-6 animate-fade-in">
+              <div className="d-inline-block px-3 py-1 mb-3 rounded-pill bg-primary st-subtle" style={{background: 'var(--primary-50)', color: 'var(--primary-700)', fontWeight: '600', fontSize: '0.875rem'}}>
+                Next Gen Healthcare
+              </div>
+              <h1 className="display-4 fw-bold mb-4 lh-1">
+                Your Health Records, <br/>
+                <span className="gradient-text">Secure & in Your Control</span>
+              </h1>
+              <p className="lead mb-5 text-secondary" style={{maxWidth: '500px'}}>
+                WellNest leverages blockchain technology to give you absolute ownership of your medical history while enabling secure, instant sharing with your doctors.
               </p>
-              <Link to="/login" className="btn btn-success px-4 py-3" style={{ fontSize: '1.125rem' }}>
-                Get Started
-              </Link>
+              <div className="d-flex flex-wrap gap-3">
+                <Link to="/login" className="btn-modern btn-primary-modern text-decoration-none">
+                  Get Started Now
+                </Link>
+                <a href="#how-it-works" className="btn-modern btn-outline-modern text-decoration-none">
+                  Learn How
+                </a>
+              </div>
             </div>
-            <div className="col-lg-5">
+            <div className="col-lg-6 position-relative animate-fade-in delay-200">
+              <div className="position-absolute top-50 start-50 translate-middle" style={{width: '120%', height: '120%', background: 'radial-gradient(circle, var(--primary-100) 0%, rgba(255,255,255,0) 70%)', zIndex: -1}}></div>
               <img
-                src="https://cdn.pixabay.com/photo/2017/10/04/09/56/laboratory-2815640_1280.jpg"
-                className="img-fluid rounded shadow-sm"
-                alt="Healthcare"
+                src="https://img.freepik.com/free-vector/telemedicine-concept-audit-medical-history_23-2148590807.jpg"
+                className="img-fluid rounded-4 shadow-xl border border-white"
+                alt="Digital Healthcare Dashboard"
+                style={{transform: 'rotate(-2deg)'}}
               />
             </div>
           </div>
@@ -65,24 +86,24 @@ const Home = ({ darkMode, toggleDarkMode }) => {
       </header>
 
       {/* Features Section */}
-      <section className="py-4 bg-light">
-        <div className="container">
-          <div className="text-center mb-4">
-            <h2 className="fw-bold" style={{ fontSize: '2rem' }}>Key Features</h2>
-            <p className="text-muted" style={{ fontSize: '1.125rem' }}>Built on Hyperledger Fabric for enterprise-grade security and performance</p>
+      <section className="py-5" style={{background: 'var(--surface-50)'}}>
+        <div className="container py-5">
+          <div className="text-center mb-5 animate-fade-in">
+            <h2 className="display-6 fw-bold mb-3">Why WellNest?</h2>
+            <p className="text-secondary mx-auto" style={{ maxWidth: '600px' }}>
+              Built on Hyperledger Fabric for enterprise-grade security, scalability, and performance in healthcare data management.
+            </p>
           </div>
 
-          <div className="row g-3">
+          <div className="row g-4">
             {features.map((feature, index) => (
-              <div className="col-md-4" key={index}>
-                <div className="card h-100 border-0 shadow-sm">
-                  <div className="card-body text-center p-3">
-                    <div className="mb-2">
-                      {feature.icon}
-                    </div>
-                    <h4 className="fw-bold mb-2" style={{ fontSize: '1.125rem' }}>{feature.title}</h4>
-                    <p className="text-muted mb-0" style={{ fontSize: '1rem' }}>{feature.description}</p>
+              <div className="col-md-4 animate-fade-in delay-100" key={index} style={{animationDelay: `${index * 100}ms`}}>
+                <div className="feature-card h-100 d-flex flex-column align-items-center text-center">
+                  <div className="icon-box mb-4">
+                    {React.cloneElement(feature.icon, { size: 24 })}
                   </div>
+                  <h4 className="fw-bold mb-3">{feature.title}</h4>
+                  <p className="text-secondary mb-0">{feature.description}</p>
                 </div>
               </div>
             ))}
@@ -91,46 +112,40 @@ const Home = ({ darkMode, toggleDarkMode }) => {
       </section>
 
       {/* How It Works Section */}
-      <section className="py-4">
-        <div className="container">
-          <div className="text-center mb-4">
-            <h2 className="fw-bold" style={{ fontSize: '2rem' }}>How It Works</h2>
-            <p className="text-muted" style={{ fontSize: '1.125rem' }}>A seamless workflow for managing healthcare data</p>
+      <section id="how-it-works" className="py-5 bg-white">
+        <div className="container py-5">
+          <div className="text-center mb-5">
+            <h2 className="display-6 fw-bold mb-3">Seamless Workflow</h2>
+            <p className="text-secondary">Experience healthcare coordination as it should be.</p>
           </div>
 
-          <div className="card border-0 shadow-sm">
-            <div className="card-body p-3">
-              <div className="row g-3">
-                <div className="col-md-4 text-center">
-                  <div className="p-2">
-                    <h3 className="text-primary fw-bold mb-2" style={{ fontSize: '1.25rem' }}>01</h3>
-                    <h5 className="fw-bold mb-1" style={{ fontSize: '1rem' }}>Patient Registers</h5>
-                    <p className="text-muted mb-2" style={{ fontSize: '0.875rem' }}>
-                      Patients create an account and maintain control of their medical records.
-                    </p>
-                    <FaUserPlus className="text-primary" style={{ fontSize: '1.25rem' }} />
-                  </div>
+          <div className="glass-panel p-5 rounded-4 animate-fade-in">
+            <div className="row g-5 position-relative">
+               {/* Connecting Line (Desktop) */}
+               <div className="d-none d-md-block position-absolute top-50 start-0 w-100 border-top border-2 border-dashed" style={{marginTop: '-20px', zIndex: -1, borderColor: 'var(--surface-300)'}}></div>
+
+              <div className="col-md-4 text-center bg-white p-3 rounded-3 shadow-sm position-relative">
+                <div className="icon-box mx-auto bg-white border border-primary-100 shadow-sm" style={{width: '4rem', height: '4rem'}}>
+                  <FaUserPlus className="text-primary" size={24} />
                 </div>
-                <div className="col-md-4 text-center">
-                  <div className="p-2">
-                    <h3 className="text-primary fw-bold mb-2" style={{ fontSize: '1.25rem' }}>02</h3>
-                    <h5 className="fw-bold mb-1" style={{ fontSize: '1rem' }}>Doctor Requests Access</h5>
-                    <p className="text-muted mb-2" style={{ fontSize: '0.875rem' }}>
-                      Healthcare providers request permission to view patient records.
-                    </p>
-                    <FaExchangeAlt className="text-primary" style={{ fontSize: '1.25rem' }} />
-                  </div>
+                <h5 className="fw-bold mt-3">1. Join</h5>
+                <p className="small text-secondary mb-0">Patient creates a secure identity and wallet.</p>
+              </div>
+
+              <div className="col-md-4 text-center bg-white p-3 rounded-3 shadow-sm position-relative">
+                <div className="icon-box mx-auto bg-white border border-primary-100 shadow-sm" style={{width: '4rem', height: '4rem'}}>
+                   <FaExchangeAlt className="text-primary" size={24} />
                 </div>
-                <div className="col-md-4 text-center">
-                  <div className="p-2">
-                    <h3 className="text-primary fw-bold mb-2" style={{ fontSize: '1.25rem' }}>03</h3>
-                    <h5 className="fw-bold mb-1" style={{ fontSize: '1rem' }}>Secure Collaboration</h5>
-                    <p className="text-muted mb-2" style={{ fontSize: '0.875rem' }}>
-                      Permissioned access allows healthcare coordination with full auditability.
-                    </p>
-                    <FaCheckCircle className="text-primary" style={{ fontSize: '1.25rem' }} />
-                  </div>
+                 <h5 className="fw-bold mt-3">2. Consent</h5>
+                <p className="small text-secondary mb-0">Doctors request access; you approve instantly.</p>
+              </div>
+
+              <div className="col-md-4 text-center bg-white p-3 rounded-3 shadow-sm position-relative">
+                <div className="icon-box mx-auto bg-white border border-primary-100 shadow-sm" style={{width: '4rem', height: '4rem'}}>
+                  <FaCheckCircle className="text-primary" size={24} />
                 </div>
+                 <h5 className="fw-bold mt-3">3. Care</h5>
+                <p className="small text-secondary mb-0">Secure data exchange for better treatment.</p>
               </div>
             </div>
           </div>
@@ -138,27 +153,23 @@ const Home = ({ darkMode, toggleDarkMode }) => {
       </section>
 
       {/* Footer */}
-      <footer className="bg-dark text-white py-3 mt-auto">
+      <footer className="py-4 mt-auto" style={{background: 'var(--surface-900)', color: 'var(--surface-400)'}}>
         <div className="container">
-          <div className="row g-3">
-            <div className="col-md-6">
-              <div className="d-flex align-items-center mb-1">
-                <FaHeartbeat className="me-1" style={{ fontSize: '0.875rem' }} />
-                <h5 className="mb-0 fw-bold" style={{ fontSize: '0.9375rem' }}>WellNest</h5>
+          <div className="row align-items-center gy-4">
+            <div className="col-md-6 order-2 order-md-1 text-center text-md-start">
+              <div className="d-flex align-items-center justify-content-center justify-content-md-start mb-2">
+                <FaHeartbeat className="me-2 text-primary" />
+                <span className="fw-bold text-white">WellNest</span>
               </div>
-              <p className="small opacity-75 mb-2" style={{ fontSize: '0.75rem' }}>
-                Revolutionizing healthcare data management through blockchain technology.
-                Secure, private, and patient-centered.
-              </p>
+              <small>© 2025 WellNest Healthcare. All rights reserved.</small>
             </div>
-            <div className="col-md-6 text-md-end">
-              <h6 className="fw-bold mb-1" style={{ fontSize: '0.875rem' }}>Contact Us</h6>
-              <p className="small opacity-75 mb-0" style={{ fontSize: '0.75rem' }}>support@WellNest.com</p>
+            <div className="col-md-6 order-1 order-md-2 text-center text-md-end">
+               <div className="d-flex justify-content-center justify-content-md-end gap-4">
+                 <Link to="#" className="text-decoration-none text-light small hover-opacity">Privacy</Link>
+                 <Link to="#" className="text-decoration-none text-light small hover-opacity">Terms</Link>
+                 <Link to="#" className="text-decoration-none text-light small hover-opacity">Support</Link>
+               </div>
             </div>
-          </div>
-          <hr className="my-2 opacity-25" />
-          <div className="text-center">
-            <p className="small opacity-75 mb-0" style={{ fontSize: '0.75rem' }}>© 2025 WellNest. All rights reserved.</p>
           </div>
         </div>
       </footer>

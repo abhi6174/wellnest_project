@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import Navbar from './Navbar';
 import { useNavigate } from 'react-router-dom';
 import {
   Box,
@@ -81,19 +82,19 @@ const DoctorDashboard = () => {
   useEffect(() => {
     if (tabValue === 0) {
       setFilteredPatients(
-        acceptedPatients.filter(patient => 
+        acceptedPatients.filter(patient =>
           patient.pid.toLowerCase().includes(searchTerm.toLowerCase())
         )
       );
     } else if (tabValue === 1) {
       setFilteredPatients(
-        pendingPatients.filter(patient => 
+        pendingPatients.filter(patient =>
           patient.pid.toLowerCase().includes(searchTerm.toLowerCase())
         )
       );
     } else {
       setFilteredPatients(
-        revokedPatients.filter(patient => 
+        revokedPatients.filter(patient =>
           patient.pid.toLowerCase().includes(searchTerm.toLowerCase())
         )
       );
@@ -135,21 +136,21 @@ const DoctorDashboard = () => {
 
       if (!response.ok) throw new Error('Failed to fetch patient requests');
       const data = await response.json();
-      
+
       // Filter patients based on status
       const accepted = data.filter(request => request.status === 'Accepted')
         .map(request => ({ pid: request.pid, requestId: request.requestId }));
-      
+
       const pending = data.filter(request => request.status === 'Requested')
         .map(request => ({ pid: request.pid, requestId: request.requestId }));
-      
+
       const revoked = data.filter(request => request.status === 'Revoked')
         .map(request => ({ pid: request.pid, requestId: request.requestId }));
-      
+
       setAcceptedPatients(accepted);
       setPendingPatients(pending);
       setRevokedPatients(revoked);
-      
+
       // Set filtered patients based on current tab
       if (tabValue === 0) {
         setFilteredPatients(accepted);
@@ -174,7 +175,7 @@ const DoctorDashboard = () => {
     localStorage.removeItem('patientId');
     localStorage.removeItem('doctorId');
     localStorage.removeItem('historyData');
-    
+
     // Force immediate navigation to login
     window.location.href = '/login';
   };
@@ -289,10 +290,10 @@ const DoctorDashboard = () => {
     if (patients.length === 0) {
       return (
         <Grid item xs={12}>
-          <Paper 
-            sx={{ 
-              p: 5, 
-              textAlign: 'center', 
+          <Paper
+            sx={{
+              p: 5,
+              textAlign: 'center',
               bgcolor: alpha(theme.palette.primary.light, 0.05),
               border: `1px dashed ${alpha(theme.palette.primary.main, 0.3)}`,
               borderRadius: 3,
@@ -303,20 +304,20 @@ const DoctorDashboard = () => {
               No {isRevoked ? 'revoked' : (isPending ? 'pending' : 'accepted')} patients found
             </Typography>
             <Typography variant="body2" color="text.secondary">
-              {isRevoked ? 'You don\'t have any revoked patient permissions' : 
+              {isRevoked ? 'You don\'t have any revoked patient permissions' :
                 (isPending ? 'Wait for patient approval or add new requests' : 'Add a patient request to get started')}
             </Typography>
           </Paper>
         </Grid>
       );
     }
-  
+
 
     return patients.map((patient) => (
       <Grid item xs={12} key={patient.pid}>
-        <Paper 
+        <Paper
           elevation={0}
-          sx={{ 
+          sx={{
             p: 3,
             display: 'flex',
             alignItems: 'center',
@@ -332,19 +333,19 @@ const DoctorDashboard = () => {
           }}
         >
           <Box sx={{ display: 'flex', alignItems: 'center' }}>
-            <Avatar 
-              sx={{ 
+            <Avatar
+              sx={{
                 bgcolor: isRevoked
                   ? alpha(theme.palette.error.main, 0.1)
-                  : (isPending 
+                  : (isPending
                     ? alpha(theme.palette.warning.main, 0.1)
-                    : alpha(theme.palette.info.main, 0.1)), 
+                    : alpha(theme.palette.info.main, 0.1)),
                 color: isRevoked
                   ? theme.palette.error.main
-                  : (isPending 
+                  : (isPending
                     ? theme.palette.warning.main
                     : theme.palette.info.main),
-                width: 50, 
+                width: 50,
                 height: 50,
                 mr: 2
               }}
@@ -356,17 +357,17 @@ const DoctorDashboard = () => {
                 Patient {patient.pid}
               </Typography>
               <Box sx={{ display: 'flex', alignItems: 'center', mt: 0.5 }}>
-                <Chip 
-                  size="small" 
-                  label={isRevoked ? "Revoked" : (isPending ? "Pending" : "Active")} 
-                  color={isRevoked ? "error" : (isPending ? "warning" : "success")} 
-                  sx={{ 
+                <Chip
+                  size="small"
+                  label={isRevoked ? "Revoked" : (isPending ? "Pending" : "Active")}
+                  color={isRevoked ? "error" : (isPending ? "warning" : "success")}
+                  sx={{
                     borderRadius: 1,
                     fontWeight: 500
                   }}
                 />
-                <Typography 
-                  variant="body2" 
+                <Typography
+                  variant="body2"
                   color="text.secondary"
                   sx={{ ml: 2 }}
                 >
@@ -375,7 +376,7 @@ const DoctorDashboard = () => {
               </Box>
             </Box>
           </Box>
-          
+
           <Box sx={{ display: 'flex', gap: 2 }}>
             {!isPending && !isRevoked && (
               <Button
@@ -384,7 +385,7 @@ const DoctorDashboard = () => {
                 size="medium"
                 startIcon={<VisibilityIcon />}
                 onClick={() => handleViewEHR(patient)}
-                sx={{ 
+                sx={{
                   borderRadius: 2,
                   px: 2,
                   '&:hover': {
@@ -396,9 +397,9 @@ const DoctorDashboard = () => {
               </Button>
             )}
             {isPending && (
-              <Chip 
-                label="Awaiting Approval" 
-                color="warning" 
+              <Chip
+                label="Awaiting Approval"
+                color="warning"
                 sx={{ fontWeight: 500 }}
               />
             )}
@@ -410,7 +411,7 @@ const DoctorDashboard = () => {
                 startIcon={<RefreshIcon />}
                 onClick={() => handleResendRequest(patient.pid)}
                 disabled={updating}
-                sx={{ 
+                sx={{
                   borderRadius: 2,
                   px: 2,
                   boxShadow: 2,
@@ -429,103 +430,41 @@ const DoctorDashboard = () => {
   };
 
   return (
-    <Box sx={{ 
-      display: 'flex', 
-      flexDirection: 'column', 
+    <Box sx={{
+      display: 'flex',
+      flexDirection: 'column',
       minHeight: '100vh',
       backgroundColor: alpha(theme.palette.primary.light, 0.05)
     }}>
-      <AppBar 
-        position="fixed" 
-        color="primary" 
-        elevation={0}
-        sx={{ 
-          borderBottom: `1px solid ${alpha(theme.palette.common.white, 0.2)}`,
-          backdropFilter: 'blur(8px)',
-          backgroundColor: '#092039'
-        }}
-      >
-        <Toolbar>
-          <Box sx={{ display: 'flex', alignItems: 'center' }}>
-            <DoctorIcon sx={{ fontSize: 28, mr: 1 }} />
-            <Typography variant="h5" component="div" fontWeight="600">
-              WellNest
-            </Typography>
-          </Box>
-          
-          <Box sx={{ flexGrow: 1, display: 'flex', justifyContent: 'center' }}>
-            <Typography 
-              variant="h6" 
-              component="div" 
-              sx={{ 
-                fontWeight: 500,
-                display: { xs: 'none', md: 'block' } 
-              }}
-            >
-              Doctor Dashboard
-            </Typography>
-          </Box>
-          
-          {/* Username display */}
-          <Box sx={{ 
-            display: 'flex', 
-            alignItems: 'center',
-            mr: 2,
-            px: 2,
-            py: 0.5,
-            borderRadius: 2,
-            bgcolor: alpha(theme.palette.common.white, 0.1)
-          }}>
-            <AccountCircleIcon sx={{ mr: 1, fontSize: 20 }} />
-            <Typography variant="body2" fontWeight="500">
-              {username || 'Doctor'}
-            </Typography>
-          </Box>
-          
-          <Button 
-            color="inherit" 
-            onClick={handleLogout}
-            startIcon={<LogoutIcon />}
-            sx={{ 
-              borderRadius: 2,
-              px: 2,
-              '&:hover': {
-                backgroundColor: alpha(theme.palette.common.white, 0.15)
-              }
-            }}
-          >
-            Logout
-          </Button>
-        </Toolbar>
-      </AppBar>
-      
-      <Container maxWidth="lg" sx={{ mt: 12, mb: 6, flex: 1 }}>
+      <Navbar title="Doctor Dashboard" username={username} onLogout={handleLogout} />
+
+      <Container maxWidth="lg" sx={{ mt: 4, mb: 6, flex: 1 }}>
         <Box sx={{ mb: 4 }}>
-            <Typography variant="h4" fontWeight="600" gutterBottom align="center" >
-              Welcome Doctor
-            </Typography>
-            <Typography 
-              variant="body1" align="center"
-              sx={{ color: 'black' }}
-            >
-              Manage your patients and electronic health records from this dashboard.
-            </Typography>
+          <Typography variant="h4" fontWeight="600" gutterBottom align="center" >
+            Welcome Doctor
+          </Typography>
+          <Typography
+            variant="body1" align="center"
+            sx={{ color: 'black' }}
+          >
+            Manage your patients and electronic health records from this dashboard.
+          </Typography>
         </Box>
-        
+
         <Grid container spacing={4}>
           {/* Add Patient Request */}
           <Grid item xs={12}>
-            <Card 
+            <Card
               elevation={0}
-              sx={{ 
-                borderRadius: 3, 
+              sx={{
+                borderRadius: 3,
                 boxShadow: '0 4px 20px rgba(0,0,0,0.1)',
                 overflow: 'hidden'
               }}
             >
-              <Box 
-                sx={{ 
-                  bgcolor: 'primary.main', 
+              <Box
+                sx={{
+                  bgcolor: 'primary.main',
                   color: 'primary.contrastText',
                   py: 1.5,
                   px: 3
@@ -537,7 +476,7 @@ const DoctorDashboard = () => {
               </Box>
               <CardContent sx={{ p: 3 }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                  <TextField 
+                  <TextField
                     fullWidth
                     label="Patient ID"
                     variant="outlined"
@@ -564,9 +503,9 @@ const DoctorDashboard = () => {
                     onClick={handleAddRequest}
                     disabled={updating || !patientId.trim()}
                     startIcon={updating ? <CircularProgress size={20} color="inherit" /> : <AddIcon />}
-                    sx={{ 
-                      px: 3, 
-                      py: 1.5, 
+                    sx={{
+                      px: 3,
+                      py: 1.5,
                       whiteSpace: 'nowrap',
                       borderRadius: 2,
                       boxShadow: 2,
@@ -583,20 +522,20 @@ const DoctorDashboard = () => {
               </CardContent>
             </Card>
           </Grid>
-          
+
           {/* Patient List Tabs */}
           <Grid item xs={12}>
-            <Card 
+            <Card
               elevation={0}
-              sx={{ 
-                borderRadius: 3, 
+              sx={{
+                borderRadius: 3,
                 boxShadow: '0 4px 20px rgba(0,0,0,0.1)',
                 overflow: 'hidden'
               }}
             >
-              <Box 
-                sx={{ 
-                  bgcolor: 'primary.main', 
+              <Box
+                sx={{
+                  bgcolor: 'primary.main',
                   color: 'primary.contrastText',
                   py: 1.5,
                   px: 3,
@@ -614,8 +553,8 @@ const DoctorDashboard = () => {
                   size="small"
                   value={searchTerm}
                   onChange={handleSearch}
-                  sx={{ 
-                    width: 250, 
+                  sx={{
+                    width: 250,
                     bgcolor: alpha(theme.palette.common.white, 0.1),
                     borderRadius: 2,
                     '& .MuiOutlinedInput-root': {
@@ -646,10 +585,10 @@ const DoctorDashboard = () => {
                   }}
                 />
               </Box>
-              
+
               <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-                <Tabs 
-                  value={tabValue} 
+                <Tabs
+                  value={tabValue}
                   onChange={handleTabChange}
                   variant="fullWidth"
                   sx={{
@@ -659,24 +598,24 @@ const DoctorDashboard = () => {
                     }
                   }}
                 >
-                  <Tab 
-                    icon={<AcceptedIcon />} 
-                    iconPosition="start" 
-                    label={`Accepted (${acceptedPatients.length})`} 
+                  <Tab
+                    icon={<AcceptedIcon />}
+                    iconPosition="start"
+                    label={`Accepted (${acceptedPatients.length})`}
                   />
-                  <Tab 
-                    icon={<PendingIcon />} 
-                    iconPosition="start" 
-                    label={`Pending (${pendingPatients.length})`} 
+                  <Tab
+                    icon={<PendingIcon />}
+                    iconPosition="start"
+                    label={`Pending (${pendingPatients.length})`}
                   />
-                  <Tab 
-                    icon={<CloseIcon />} 
-                    iconPosition="start" 
-                    label={`Revoked (${revokedPatients.length})`} 
+                  <Tab
+                    icon={<CloseIcon />}
+                    iconPosition="start"
+                    label={`Revoked (${revokedPatients.length})`}
                   />
                 </Tabs>
               </Box>
-              
+
               <CardContent sx={{ p: 3 }}>
                 {loading ? (
                   <Box sx={{ display: 'flex', justifyContent: 'center', p: 5 }}>
@@ -687,8 +626,8 @@ const DoctorDashboard = () => {
                     {tabValue === 0 && (
                       <Card elevation={0} sx={{ borderRadius: 3, overflow: 'hidden' }}>
                         <CardContent sx={{ p: 0 }}>
-                          <Box sx={{ 
-                            p: 3, 
+                          <Box sx={{
+                            p: 3,
                             background: 'linear-gradient(90deg, #043B89 0%, #0A4DAA 100%)',
                             color: 'primary.contrastText',
                             display: 'flex',
@@ -708,12 +647,12 @@ const DoctorDashboard = () => {
                         </CardContent>
                       </Card>
                     )}
-                    
+
                     {tabValue === 1 && (
                       <Card elevation={0} sx={{ borderRadius: 3, overflow: 'hidden' }}>
                         <CardContent sx={{ p: 0 }}>
-                          <Box sx={{ 
-                            p: 3, 
+                          <Box sx={{
+                            p: 3,
                             background: 'linear-gradient(90deg, #FDB159 0%, #FFD9A0 100%)',
                             color: 'warning.contrastText',
                             display: 'flex',
@@ -737,8 +676,8 @@ const DoctorDashboard = () => {
                     {tabValue === 2 && (
                       <Card elevation={0} sx={{ borderRadius: 3, overflow: 'hidden' }}>
                         <CardContent sx={{ p: 0 }}>
-                          <Box sx={{ 
-                            p: 3, 
+                          <Box sx={{
+                            p: 3,
                             background: 'linear-gradient(90deg, #E57373 0%, #EF9A9A 100%)',
                             color: 'error.contrastText',
                             display: 'flex',
@@ -765,10 +704,10 @@ const DoctorDashboard = () => {
           </Grid>
         </Grid>
       </Container>
-      
+
       {/* Update EHR Dialog */}
-      <Dialog 
-        open={openDialog} 
+      <Dialog
+        open={openDialog}
         onClose={handleCloseDialog}
         fullWidth
         maxWidth="md"
@@ -785,8 +724,8 @@ const DoctorDashboard = () => {
             <Typography variant="h6" fontWeight={500}>
               Update EHR for Patient {currentPatient?.pid}
             </Typography>
-            <IconButton 
-              onClick={handleCloseDialog} 
+            <IconButton
+              onClick={handleCloseDialog}
               size="small"
               sx={{ color: 'common.white' }}
             >
@@ -808,7 +747,7 @@ const DoctorDashboard = () => {
               value={ehrText}
               onChange={(e) => setEhrText(e.target.value)}
               placeholder="Enter notes, diagnosis, treatment plans, or other relevant medical information..."
-              sx={{ 
+              sx={{
                 mt: 1,
                 '& .MuiOutlinedInput-root': {
                   borderRadius: 2
@@ -818,24 +757,24 @@ const DoctorDashboard = () => {
           </Box>
         </DialogContent>
         <DialogActions sx={{ px: 3, py: 3, borderTop: `1px solid ${theme.palette.divider}` }}>
-          <Button 
-            onClick={handleCloseDialog} 
+          <Button
+            onClick={handleCloseDialog}
             color="inherit"
             variant="outlined"
-            sx={{ 
+            sx={{
               borderRadius: 2,
               px: 3
             }}
           >
             Cancel
           </Button>
-          <Button 
-            onClick={handleUpdateEHR} 
-            variant="contained" 
+          <Button
+            onClick={handleUpdateEHR}
+            variant="contained"
             color="primary"
             disabled={updating || !ehrText.trim()}
             startIcon={updating ? <CircularProgress size={20} color="inherit" /> : <EditIcon />}
-            sx={{ 
+            sx={{
               borderRadius: 2,
               px: 3,
               boxShadow: 2,
@@ -848,14 +787,14 @@ const DoctorDashboard = () => {
           </Button>
         </DialogActions>
       </Dialog>
-      
+
       {/* Footer */}
-      <Box 
-        component="footer" 
-        sx={{ 
-          py: 3, 
-          bgcolor: '#043B89', 
-          borderTop: '1px solid', 
+      <Box
+        component="footer"
+        sx={{
+          py: 3,
+          bgcolor: '#043B89',
+          borderTop: '1px solid',
           borderColor: 'divider',
           mt: 'auto'
         }}
@@ -872,19 +811,19 @@ const DoctorDashboard = () => {
           </Typography>
         </Container>
       </Box>
-      
+
       {/* Alerts */}
-      <Snackbar 
-        open={!!error} 
-        autoHideDuration={6000} 
+      <Snackbar
+        open={!!error}
+        autoHideDuration={6000}
         onClose={handleCloseAlert}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
       >
-        <Alert 
-          onClose={handleCloseAlert} 
-          severity="error" 
+        <Alert
+          onClose={handleCloseAlert}
+          severity="error"
           variant="filled"
-          sx={{ 
+          sx={{
             width: '100%',
             borderRadius: 2,
             boxShadow: 4
@@ -893,18 +832,18 @@ const DoctorDashboard = () => {
           {error}
         </Alert>
       </Snackbar>
-      
-      <Snackbar 
-        open={!!success} 
-        autoHideDuration={6000} 
+
+      <Snackbar
+        open={!!success}
+        autoHideDuration={6000}
         onClose={handleCloseAlert}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
       >
-        <Alert 
-          onClose={handleCloseAlert} 
-          severity="success" 
+        <Alert
+          onClose={handleCloseAlert}
+          severity="success"
           variant="filled"
-          sx={{ 
+          sx={{
             width: '100%',
             borderRadius: 2,
             boxShadow: 4

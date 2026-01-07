@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import Navbar from './Navbar';
 import { useNavigate } from 'react-router-dom';
 import {
   Box,
@@ -67,7 +68,7 @@ const PatientDashboard = () => {
   const fetchDoctorData = async () => {
     setLoading(true);
     setError('');
-    
+
     try {
       // Fetch accepted doctors
       const acceptedResponse = await fetch('http://localhost:8080/fabric/patient/accepted', {
@@ -92,7 +93,7 @@ const PatientDashboard = () => {
       if (!pendingResponse.ok) throw new Error("Failed to fetch pending requests");
       const pendingData = await pendingResponse.json();
       setPendingDoctors(pendingData);
-      
+
     } catch (error) {
       console.error(error);
       setError('Failed to load doctor data. Please try again.');
@@ -119,7 +120,7 @@ const PatientDashboard = () => {
     localStorage.removeItem('patientId');
     localStorage.removeItem('doctorId');
     localStorage.removeItem('historyData');
-    
+
     // Force immediate navigation to login
     window.location.href = '/login';
   };
@@ -158,18 +159,17 @@ const PatientDashboard = () => {
       });
 
       if (!response.ok) throw new Error(`Failed to ${status.toLowerCase()} doctor`);
-      
-      setSuccess(`Doctor ${
-        status === 'Accept'
+
+      setSuccess(`Doctor ${status === 'Accept'
           ? 'accepted'
           : status === 'Rejected'
-          ? 'rejected'
-          : status === 'Revoked'
-          ? 'revoked'
-          : status === 'Activate'
-          ? 'activated'
-          : 'updated'
-      } successfully!`);
+            ? 'rejected'
+            : status === 'Revoked'
+              ? 'revoked'
+              : status === 'Activate'
+                ? 'activated'
+                : 'updated'
+        } successfully!`);
       fetchDoctorData();
     } catch (error) {
       console.error(error);
@@ -213,9 +213,9 @@ const PatientDashboard = () => {
 
     return doctors.map((doctor, index) => (
       <Grid item xs={12} key={`${doctor.requestId || doctor.did}-${isPending ? 'pending' : 'accepted'}-${index}`}>
-        <Paper 
+        <Paper
           elevation={3}
-          sx={{ 
+          sx={{
             p: 2.5,
             display: 'flex',
             flexDirection: isMobile ? 'column' : 'row',
@@ -232,15 +232,15 @@ const PatientDashboard = () => {
             borderColor: 'divider'
           }}
         >
-          <Box sx={{ 
-            display: 'flex', 
-            alignItems: 'center', 
+          <Box sx={{
+            display: 'flex',
+            alignItems: 'center',
             mb: isMobile ? 2 : 0,
             width: isMobile ? '100%' : 'auto'
           }}>
-            <Avatar 
-              sx={{ 
-                bgcolor:'#0B8A67', // Changed colors
+            <Avatar
+              sx={{
+                bgcolor: '#0B8A67', // Changed colors
                 mr: 2,
                 width: 50,
                 height: 50,
@@ -253,18 +253,18 @@ const PatientDashboard = () => {
               <Typography variant="h6" fontWeight={600} sx={{ lineHeight: 1.2 }}>
                 Doctor ID: {doctor.did}
               </Typography>
-              <Chip 
-                size="small" 
-                label={doctor.status === 'active' ? "Accepted & Active" : "Pending Approval"} 
-                color={doctor.status === 'active' ? "success" : "warning"} 
+              <Chip
+                size="small"
+                label={doctor.status === 'active' ? "Accepted & Active" : "Pending Approval"}
+                color={doctor.status === 'active' ? "success" : "warning"}
                 icon={doctor.status === 'active' ? <AcceptedIcon /> : <PendingIcon />}
                 sx={{ mt: 1, borderRadius: 1, fontWeight: 500 }}
               />
             </Box>
           </Box>
-          
-          <Box sx={{ 
-            display: 'flex', 
+
+          <Box sx={{
+            display: 'flex',
             gap: 1.5,
             width: isMobile ? '100%' : 'auto',
             justifyContent: isMobile ? 'space-between' : 'flex-end',
@@ -278,7 +278,7 @@ const PatientDashboard = () => {
               startIcon={<HistoryIcon />}
               onClick={() => viewHistory(doctor.did)}
               fullWidth={isMobile}
-              sx={{ 
+              sx={{
                 borderRadius: 1.5,
                 boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
                 minWidth: isMobile ? '100%' : 'auto',
@@ -296,7 +296,7 @@ const PatientDashboard = () => {
                 onClick={() => handleAction('Revoked', doctor.did)}
                 disabled={!!actionLoading}
                 fullWidth={isMobile}
-                sx={{ 
+                sx={{
                   borderRadius: 1.5,
                   boxShadow: '0 2px 5px rgba(211, 47, 47, 0.3)',
                   bgcolor: '#FF6B6B', // Changed color
@@ -314,7 +314,7 @@ const PatientDashboard = () => {
                 onClick={() => handleAction('Accepted', doctor.did, isPending)}
                 disabled={!!actionLoading}
                 fullWidth={isMobile}
-                sx={{ 
+                sx={{
                   borderRadius: 1.5,
                   boxShadow: '0 2px 5px rgba(46, 125, 50, 0.3)',
                   bgcolor: '#4CAF50', // Changed color
@@ -331,87 +331,30 @@ const PatientDashboard = () => {
   };
 
   return (
-    <Box sx={{ 
-      display: 'flex', 
-      flexDirection: 'column', 
+    <Box sx={{
+      display: 'flex',
+      flexDirection: 'column',
       minHeight: '100vh',
       bgcolor: theme.palette.mode === 'light' ? '#fff' : '#121212'
     }}>
       {/* Changed header color */}
-      <AppBar 
-        position="fixed" 
-        color="primary" 
-        elevation={4}
-        sx={{
-          background: '#0A5741' // Changed from #0A5741 to Steel Blue
-        }}
-      >
-        <Toolbar>
-          <Box sx={{ display: 'flex', alignItems: 'center' }}>
-            <DoctorIcon sx={{ fontSize: 28, mr: 1 }} />
-            <Typography variant="h5" component="div" fontWeight="600">
-              WellNest
-            </Typography>
-          </Box>
-       
-          <Box sx={{ flexGrow: 1, display: 'flex', justifyContent: 'center' }}>
-            <Typography 
-              variant="h6" 
-              component="div" 
-              sx={{ 
-                fontWeight: 500,
-                display: { xs: 'none', md: 'block' } 
-              }}
-            >
-              Patient Dashboard
-            </Typography>
-          </Box>
-          
-          {/* Username display */}
-          <Box sx={{ 
-            display: 'flex', 
-            alignItems: 'center',
-            mr: 2,
-            px: 2,
-            py: 0.5,
-            borderRadius: 2,
-            bgcolor: alpha(theme.palette.common.white, 0.1)
-          }}>
-            <AccountCircleIcon sx={{ mr: 1, fontSize: 20 }} />
-            <Typography variant="body2" fontWeight="500">
-              {username || 'Patient'}
-            </Typography>
-          </Box>
-          
-          <Button 
-            color="inherit" 
-            onClick={handleLogout}
-            startIcon={<LogoutIcon />}
-            sx={{ 
-              borderRadius: 2,
-              '&:hover': {
-                backgroundColor: 'rgba(255, 255, 255, 0.1)'
-              }
-            }}
-          >
-            Logout
-          </Button>
-        </Toolbar>
-      </AppBar>
-      
-      <Container maxWidth="lg" sx={{ mt: 12, mb: 6, flex: 1 }}>
+      <Navbar title="Patient Dashboard" username={username} onLogout={handleLogout} />
+
+      <Container maxWidth="lg" sx={{ mt: 4, mb: 6, flex: 1 }}>
+
+
         {/*user ehr viewing option */}
-        <Card 
-          elevation={4} 
-          sx={{ 
-            borderRadius: 3, 
-            mb: 3, 
+        <Card
+          elevation={4}
+          sx={{
+            borderRadius: 3,
+            mb: 3,
             background: 'linear-gradient(135deg, #0B8A67 0%, #09B135 100%)',
             overflow: 'hidden'
           }}
         >
-          <Box sx={{ 
-            p: 3, 
+          <Box sx={{
+            p: 3,
             display: 'flex',
             flexDirection: isMobile ? 'column' : 'row',
             alignItems: 'center',
@@ -453,8 +396,8 @@ const PatientDashboard = () => {
 
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
           <Card elevation={4} sx={{ borderRadius: 3, overflow: 'hidden' }}>
-            <Box sx={{ 
-              p: 2, 
+            <Box sx={{
+              p: 2,
               background: 'linear-gradient(135deg, #0B8A67 0%, #09B135 100%)',
               borderBottom: '1px solid',
               borderColor: 'divider'
@@ -468,7 +411,7 @@ const PatientDashboard = () => {
                 </Box>
               </Box>
             </Box>
-            
+
             <Tabs
               value={tabValue}
               onChange={handleTabChange}
@@ -490,35 +433,35 @@ const PatientDashboard = () => {
                 sx: { height: 3, borderRadius: '3px 3px 0 0', backgroundColor: '#09B135' } // Changed indicator color
               }}
             >
-              <Tab 
+              <Tab
                 label={
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                     <AcceptedIcon fontSize="small" />
                     <Typography component="span">
                       Accepted Doctors
-                      {acceptedDoctors.length > 0 && 
-                        <Chip 
-                          label={acceptedDoctors.length} 
-                          size="small" 
-                          color="success" 
-                          sx={{ ml: 1, height: 20, minWidth: 20, fontSize: '0.7rem', background: 'linear-gradient(135deg, #0B8A67 0%, #09B135 100%)'}} // Changed chip color
+                      {acceptedDoctors.length > 0 &&
+                        <Chip
+                          label={acceptedDoctors.length}
+                          size="small"
+                          color="success"
+                          sx={{ ml: 1, height: 20, minWidth: 20, fontSize: '0.7rem', background: 'linear-gradient(135deg, #0B8A67 0%, #09B135 100%)' }} // Changed chip color
                         />
                       }
                     </Typography>
                   </Box>
-                } 
+                }
               />
-              <Tab 
+              <Tab
                 label={
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                     <PendingIcon fontSize="small" />
                     <Typography component="span">
                       Pending Requests
-                      {pendingDoctors.length > 0 && 
-                        <Chip 
-                          label={pendingDoctors.length} 
-                          size="small" 
-                          color="warning" 
+                      {pendingDoctors.length > 0 &&
+                        <Chip
+                          label={pendingDoctors.length}
+                          size="small"
+                          color="warning"
                           sx={{ ml: 1, height: 20, minWidth: 20, fontSize: '0.7rem', bgcolor: '#09B135' }} // Changed chip color
                         />
                       }
@@ -528,12 +471,12 @@ const PatientDashboard = () => {
               />
             </Tabs>
           </Card>
-          
+
           {loading && !refreshing ? (
-            <Box sx={{ 
-              display: 'flex', 
-              justifyContent: 'center', 
-              alignItems: 'center', 
+            <Box sx={{
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
               p: 6,
               height: '300px',
               borderRadius: 3,
@@ -552,8 +495,8 @@ const PatientDashboard = () => {
               {tabValue === 0 && (
                 <Card elevation={3} sx={{ borderRadius: 3, overflow: 'hidden' }}>
                   <CardContent sx={{ p: 0 }}>
-                    <Box sx={{ 
-                      p: 3, 
+                    <Box sx={{
+                      p: 3,
                       background: 'linear-gradient(135deg, #0B8A67 0%, #09B135 100%)',
                       color: 'primary.contrastText',
                       display: 'flex',
@@ -573,12 +516,12 @@ const PatientDashboard = () => {
                   </CardContent>
                 </Card>
               )}
-              
+
               {tabValue === 1 && (
                 <Card elevation={3} sx={{ borderRadius: 3, overflow: 'hidden' }}>
                   <CardContent sx={{ p: 0 }}>
-                    <Box sx={{ 
-                      p: 3, 
+                    <Box sx={{
+                      p: 3,
                       background: 'linear-gradient(90deg, #FDB159 0%, #FFD9A0 100%)',
                       color: 'warning.contrastText',
                       display: 'flex',
@@ -602,22 +545,22 @@ const PatientDashboard = () => {
           )}
         </Box>
       </Container>
-      
+
       {/* Footer with changed color */}
-      <Box 
-        component="footer" 
-        sx={{ 
-          py: 1, 
+      <Box
+        component="footer"
+        sx={{
+          py: 1,
           bgcolor: '#0B8A67', // Changed from #0B8A67 to Steel Blue
-          borderTop: '1px solid', 
+          borderTop: '1px solid',
           borderColor: 'divider',
           mt: 'auto'
         }}
       >
         <Container maxWidth="lg">
-          <Box 
-            sx={{ 
-              display: 'flex', 
+          <Box
+            sx={{
+              display: 'flex',
               flexDirection: 'column',
               justifyContent: 'space-between',
               alignItems: 'center',
@@ -626,15 +569,15 @@ const PatientDashboard = () => {
               textAlign: 'center'
             }}
           >
-            <Typography 
-              variant="subtitle1" 
-              color="white" 
+            <Typography
+              variant="subtitle1"
+              color="white"
               fontWeight={600}
             >
               WellNest
             </Typography>
-            <Typography 
-              variant="body2" 
+            <Typography
+              variant="body2"
               color="white"
             >
               &copy; 2025 WellNest. All Rights Reserved.
@@ -642,33 +585,33 @@ const PatientDashboard = () => {
           </Box>
         </Container>
       </Box>
-      
+
       {/* Alerts */}
-      <Snackbar 
-        open={!!error} 
-        autoHideDuration={6000} 
+      <Snackbar
+        open={!!error}
+        autoHideDuration={6000}
         onClose={handleCloseAlert}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
       >
-        <Alert 
-          onClose={handleCloseAlert} 
-          severity="error" 
+        <Alert
+          onClose={handleCloseAlert}
+          severity="error"
           variant="filled"
           sx={{ width: '100%', boxShadow: 3, borderRadius: 2, bgcolor: '#FF6B6B' }} // Changed color
         >
           {error}
         </Alert>
       </Snackbar>
-      
-      <Snackbar 
-        open={!!success} 
-        autoHideDuration={6000} 
+
+      <Snackbar
+        open={!!success}
+        autoHideDuration={6000}
         onClose={handleCloseAlert}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
       >
-        <Alert 
-          onClose={handleCloseAlert} 
-          severity="success" 
+        <Alert
+          onClose={handleCloseAlert}
+          severity="success"
           variant="filled"
           sx={{ width: '100%', boxShadow: 3, borderRadius: 2, bgcolor: '#4CAF50' }} // Changed color
         >
