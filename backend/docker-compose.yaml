@@ -1,0 +1,55 @@
+version: '3.8'
+
+services:
+  # MongoDB Database
+  mongodb:
+    image: mongo:latest
+    container_name: wellnest-mongodb
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: password
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+    networks:
+      - wellnest-network
+
+  # Backend API Server
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: wellnest-backend
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      - NODE_ENV=production
+      - PORT=8080
+      - MONGODB_URI=mongodb://admin:password@mongodb:27017/test?authSource=admin
+      - MONGODB_USERNAME=admin
+      - MONGODB_PASSWORD=password
+      - JWT_SECRET=mySecretKey123912738aopsgjnspkmndfsopkvajoirjg94gf2opfng2moknm
+      - JWT_EXPIRATION_MS=3000000
+      - FABRIC_CONNECTION_PROFILE_PATH=./connection-profiles
+      - FABRIC_WALLET_PATH=./connection-profiles
+      - ENCRYPTION_SECRET_KEY=MySuperSecretKey
+    depends_on:
+      - mongodb
+    volumes:
+      - ./connection-profiles:/app/connection-profiles:ro
+    networks:
+      - wellnest-network
+      - artifacts_test  # Connect to blockchain network
+
+networks:
+  wellnest-network:
+    driver: bridge
+  artifacts_test:
+    external: true  # This connects to the blockchain network
+
+volumes:
+  mongodb_data:
+    driver: local

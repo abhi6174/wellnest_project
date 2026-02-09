@@ -35,7 +35,7 @@ CAPORT=7054
 PEERPEM=artifacts/channel/crypto-config/peerOrganizations/org1.example.com/tlsca/tlsca.org1.example.com-cert.pem
 CAPEM=artifacts/channel/crypto-config/peerOrganizations/org1.example.com/ca/ca.org1.example.com-cert.pem
 
-echo "$(json_ccp $ORG $P0PORT $P1PORT $CAPORT $PEERPEM $CAPEM)" > ../backend/src/main/resources/static/connection-profiles/org1/connection-org1.json
+echo "$(json_ccp $ORG $P0PORT $P1PORT $CAPORT $PEERPEM $CAPEM)" > ../backend/connection-profiles/org1/connection-org1.json
 # echo "$(yaml_ccp $ORG $P0PORT $P1PORT $CAPORT $PEERPEM $CAPEM)" > EHR/src/main/resources/static/connection-profiles/connection-org1.yaml
 
 ORG=2
@@ -45,5 +45,5 @@ CAPORT=8054
 PEERPEM=artifacts/channel/crypto-config/peerOrganizations/org2.example.com/tlsca/tlsca.org2.example.com-cert.pem
 CAPEM=artifacts/channel/crypto-config/peerOrganizations/org2.example.com/ca/ca.org2.example.com-cert.pem
 
-echo "$(json_ccp $ORG $P0PORT $P1PORT $CAPORT $PEERPEM $CAPEM)" > ../backend/src/main/resources/static/connection-profiles/org2/connection-org2.json
+echo "$(json_ccp $ORG $P0PORT $P1PORT $CAPORT $PEERPEM $CAPEM)" > ../backend/connection-profiles/org2/connection-org2.json
 # echo "$(yaml_ccp $ORG $P0PORT $P1PORT $CAPORT $PEERPEM $CAPEM)" > EHR/src/main/resources/static/connection-profiles/connection-org2.yaml
