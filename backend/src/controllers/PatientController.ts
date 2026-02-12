@@ -134,4 +134,23 @@ router.get('/history/:did', authMiddleware, async (req: AuthRequest, res: Respon
     }
 });
 
+/**
+ * GET /fabric/patient/history
+ * Get full transaction history for the patient across all doctors
+ */
+router.get('/history', authMiddleware, async (req: AuthRequest, res: Response) => {
+    try {
+        const pid = req.user!.username;
+        const mspId = req.user!.mspId;
+
+        console.log('Calling GetFullHistory for patient');
+        const transactions = await patientService.getPatientFullHistory(pid, mspId);
+
+        res.status(200).json(transactions);
+    } catch (error) {
+        console.error('Get full history error:', error);
+        res.status(500).json({ message: 'Failed to get history' });
+    }
+});
+
 export default router;

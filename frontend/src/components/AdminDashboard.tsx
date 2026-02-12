@@ -10,35 +10,21 @@ import {
   Grid,
   Card,
   CardContent,
-  Divider,
-  AppBar,
-  Toolbar,
   Container,
   CircularProgress,
   Alert,
   Snackbar,
-  Chip,
-  List,
-  ListItem,
-  ListItemAvatar,
-  ListItemText,
-  Avatar,
   InputAdornment,
   useTheme,
   alpha,
   IconButton
 } from '@mui/material';
 import {
-  Upload as UploadIcon,
   Logout as LogoutIcon,
   PersonAdd as PersonAddIcon,
-  AdminPanelSettings as AdminIcon,
   Security as SecurityIcon,
   Person as PersonIcon,
-  Assignment as AssignmentIcon,
   Key as KeyIcon,
-  Business as BusinessIcon,
-  CloudDownload as CloudDownloadIcon,
   Close as CloseIcon
 } from '@mui/icons-material';
 
@@ -46,10 +32,8 @@ const AdminDashboard = () => {
   const theme = useTheme();
   const [formData, setFormData] = useState({
     username: '',
-    password: '',
-    file: null
+    password: ''
   });
-  const [fileName, setFileName] = useState('');
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState('');
   const [error, setError] = useState('');
@@ -64,11 +48,10 @@ const AdminDashboard = () => {
 
     // Get admin's organization from localStorage
     const orgId = localStorage.getItem('mspId');
-    setAdminOrg(orgId);
+    setAdminOrg(orgId || '');
   }, []);
 
   // colours
-  // colours - Updated to match new theme
   const orgColors = {
     primary: theme.palette.primary.main, // Header & primary buttons
     secondary: theme.palette.secondary.main, // Footer & secondary elements
@@ -88,19 +71,12 @@ const AdminDashboard = () => {
     window.location.href = '/login';
   };
 
-  const handleChange = (e) => {
+  const handleChange = (e: any) => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
   };
 
-  const handleFileChange = (e) => {
-    if (e.target.files?.length) {
-      setFormData({ ...formData, file: e.target.files[0] });
-      setFileName(e.target.files[0].name);
-    }
-  };
-
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: any) => {
     e.preventDefault();
     setLoading(true);
     setError('');
@@ -110,20 +86,10 @@ const AdminDashboard = () => {
         throw new Error('Please fill in all required fields');
       }
 
-      // Only require file for patient registration (Org2MSP)
-      if (adminOrg === 'Org2MSP' && !formData.file && !fileName) {
-        throw new Error('Please upload a JSON file for patient record');
-      }
-
-      // Create FormData object for the file upload
+      // Create FormData object (backend expects multipart/form-data currently)
       const requestFormData = new FormData();
       requestFormData.append("username", formData.username);
       requestFormData.append("password", formData.password);
-
-      // Only append file for patient organization
-      if (adminOrg === 'Org2MSP' && formData.file) {
-        requestFormData.append("file", formData.file);
-      }
 
       // Ensure JWT is sent as a header
       const jwt = localStorage.getItem('jwt');
@@ -154,24 +120,21 @@ const AdminDashboard = () => {
         id: Date.now(),
         username: formData.username,
         mspId: adminOrg, // Use admin's organization
-        createdAt: new Date().toISOString(),
-        fileAttached: adminOrg === 'Org2MSP' && (!!formData.file || !!fileName)
+        createdAt: new Date().toISOString()
       };
 
-      const updatedUsers = [...registeredUsers, newUser];
+      const updatedUsers: any = [...registeredUsers, newUser];
       setRegisteredUsers(updatedUsers);
       localStorage.setItem('registeredUsers', JSON.stringify(updatedUsers));
 
       // Reset form
       setFormData({
         username: '',
-        password: '',
-        file: null
+        password: ''
       });
-      setFileName('');
       setSuccess('User registered successfully!');
 
-    } catch (error) {
+    } catch (error: any) {
       console.error('Registration Error:', error);
       setError(error.message || 'Failed to register user. Please try again.');
     } finally {
@@ -182,11 +145,6 @@ const AdminDashboard = () => {
   const handleCloseSnackbar = () => {
     setSuccess('');
     setError('');
-  };
-
-  const handleDownloadSamplePDF = () => {
-    // In a real app, this would download a sample PDF
-    alert('In a real app, this would download a sample PDF');
   };
 
   return (
@@ -328,152 +286,6 @@ const AdminDashboard = () => {
                     }}
                   />
                 </Grid>
-
-                {/* Only show file upload for patient organization admins */}
-                {adminOrg === 'Org2MSP' && (
-                  <Grid item xs={12}>
-                    <Paper
-                      variant="outlined"
-                      sx={{
-                        p: 4,
-                        textAlign: 'center',
-                        borderStyle: 'dashed',
-                        borderWidth: 2,
-                        borderColor: fileName ? orgColors.accent : theme.palette.divider,
-                        bgcolor: fileName ? alpha(orgColors.accent, 0.05) : 'transparent',
-                        borderRadius: 3,
-                        transition: 'all 0.3s ease',
-                        '&:hover': {
-                          borderColor: orgColors.accent,
-                          bgcolor: alpha(orgColors.accent, 0.05)
-                        }
-                      }}
-                    >
-                      <input
-                        accept=".json"
-                        id="file-upload"
-                        type="file"
-                        hidden
-                        onChange={handleFileChange}
-                      />
-
-                      {!fileName ? (
-                        <>
-                          <Box sx={{ mb: 2 }}>
-                            <UploadIcon sx={{ fontSize: 48, color: theme.palette.text.secondary }} />
-                          </Box>
-                          <Typography variant="h6" color="text.primary" gutterBottom>
-                            Upload Patient Health Record
-                          </Typography>
-                          <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-                            Drag and drop a JSON file here, or click to browse
-                          </Typography>
-
-                          <label htmlFor="file-upload">
-                            <Button
-                              variant="contained"
-                              component="span"
-                              startIcon={<UploadIcon />}
-                              sx={{
-                                px: 4,
-                                py: 1.5,
-                                borderRadius: 50,
-                                boxShadow: 'none',
-                                bgcolor: orgColors.accent,
-                                '&:hover': {
-                                  bgcolor: alpha(orgColors.accent, 0.8)
-                                }
-                              }}
-                            >
-                              Browse Files
-                            </Button>
-                          </label>
-
-                          <Typography
-                            variant="caption"
-                            display="block"
-                            color="text.secondary"
-                            sx={{ mt: 2 }}
-                          >
-                            JSON files only, max 10MB
-                          </Typography>
-                        </>
-                      ) : (
-                        <Box sx={{
-                          py: 1,
-                          display: 'flex',
-                          flexDirection: 'column',
-                          alignItems: 'center'
-                        }}>
-                          <Box sx={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            width: 80,
-                            height: 80,
-                            borderRadius: '50%',
-                            bgcolor: alpha(orgColors.accent, 0.1),
-                            mb: 2
-                          }}>
-                            <AssignmentIcon
-                              sx={{
-                                fontSize: 36,
-                                color: orgColors.accent
-                              }}
-                            />
-                          </Box>
-
-                          <Typography variant="h6" gutterBottom>
-                            File Selected
-                          </Typography>
-
-                          <Chip
-                            label={fileName}
-                            sx={{
-                              px: 1,
-                              mt: 1,
-                              mb: 2,
-                              borderRadius: 3,
-                              bgcolor: orgColors.accent,
-                              color: 'white',
-                              '& .MuiChip-deleteIcon': {
-                                color: 'white',
-                                opacity: 0.8,
-                                '&:hover': {
-                                  opacity: 1
-                                }
-                              }
-                            }}
-                            onDelete={() => {
-                              setFileName('');
-                              setFormData({ ...formData, file: null });
-                            }}
-                          />
-
-                          <label htmlFor="file-upload">
-                            <Button
-                              variant="outlined"
-                              component="span"
-                              size="small"
-                              sx={{
-                                borderRadius: 50,
-                                borderColor: orgColors.accent,
-                                color: orgColors.accent,
-                                '&:hover': {
-                                  borderColor: orgColors.accent,
-                                  bgcolor: alpha(orgColors.accent, 0.05)
-                                }
-                              }}
-                            >
-                              Change File
-                            </Button>
-                          </label>
-                        </Box>
-                      )}
-
-                    </Paper>
-                  </Grid>
-                )}
 
                 <Grid item xs={12}>
                   <Button

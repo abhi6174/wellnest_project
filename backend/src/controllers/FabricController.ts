@@ -2,11 +2,9 @@ import { Router, Request, Response } from 'express';
 import { authMiddleware, AuthRequest } from '../middleware/authMiddleware';
 import { jwtUtils } from '../middleware/jwtUtils';
 import { fabricService } from '../services/FabricService';
-import { ehrService } from '../services/EhrService';
 import { userInfoService } from '../services/UserInfoService';
 import { fabricUserRegistration } from '../services/FabricUserRegistration';
 import { LoginRequest } from '../types/LoginRequest';
-import { EhrDocument } from '../types/EhrDocument';
 import multer from 'multer';
 
 const router = Router();
@@ -143,27 +141,22 @@ router.post('/register', authMiddleware, upload.single('file'), async (req: Auth
 
         console.log('Register controller');
 
-        // Handle EHR document upload if file is provided
-        if (req.file) {
-            if (mspId !== 'Org2MSP') {
-                res.status(403).send('Only Patient Admin can upload PDF');
-                return;
-            }
-
-            try {
-                const ehrDocument: EhrDocument = JSON.parse(req.file.buffer.toString('utf8'));
-                await ehrService.addEhrDocument(username, ehrDocument);
-            } catch (error) {
-                console.error('Error during PDF upload:', error);
-                res.status(500).send('Error during uploading PDF');
-                return;
-            }
-        }
+        // No file upload during V2 registration
+        // Initial EHR data is empty.
 
         console.log('Received registration request');
 
         // Add user to database
-        const userAdded = await userInfoService.addUser({ username, password, mspId });
+        let userAdded = await userInfoService.addUser({ username, password, mspId });
+
+        // If adding to DB failed, check if user already exists
+        if (!userAdded) {
+            const existingUser = await userInfoService.findByUsername(username, mspId);
+            if (existingUser) {
+                console.log(`User ${username} already exists in DB, proceeding to Fabric enrollment`);
+                userAdded = true;
+            }
+        }
 
         // Add user to Fabric network
         const fabricUserAdded = await fabricUserRegistration.addUser(username, password, mspId);

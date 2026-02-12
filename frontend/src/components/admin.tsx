@@ -1,7 +1,11 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { jwtDecode } from "jwt-decode";
+import { jwtDecode, JwtPayload } from "jwt-decode";
 import "./../styles/admin.css";
+
+interface CustomJwtPayload extends JwtPayload {
+  mspId?: string;
+}
 
 const Admin = () => {
   const [showUpload, setShowUpload] = useState(false);
@@ -13,7 +17,7 @@ const Admin = () => {
     const jwt = localStorage.getItem("jwt");
     if (jwt) {
       try {
-        const decodedToken = jwtDecode(jwt);
+        const decodedToken = jwtDecode<CustomJwtPayload>(jwt);
         if (decodedToken.mspId === "Org2MSP") {
           setShowUpload(true);
         }
@@ -30,15 +34,20 @@ const Admin = () => {
   };
 
   // Form Submit
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setLoading(true);
-    const formData = new FormData();
-    formData.append("username", e.target.username.value);
-    formData.append("password", e.target.password.value);
+    const form = e.currentTarget;
+    const usernameInput = form.elements.namedItem('username') as HTMLInputElement;
+    const passwordInput = form.elements.namedItem('password') as HTMLInputElement;
+    const fileInput = form.elements.namedItem('file') as HTMLInputElement;
 
-    if (showUpload && e.target.file.files.length > 0) {
-      formData.append("file", e.target.file.files[0]);
+    const formData = new FormData();
+    formData.append("username", usernameInput.value);
+    formData.append("password", passwordInput.value);
+
+    if (showUpload && fileInput && fileInput.files && fileInput.files.length > 0) {
+      formData.append("file", fileInput.files[0]);
     }
 
     const jwt = localStorage.getItem("jwt");
@@ -55,7 +64,7 @@ const Admin = () => {
         throw new Error("Network error");
       }
 
-      const data = await response.text();
+      await response.text();
       alert("User registered successfully!");
     } catch (error) {
       console.error("Registration Error:", error);

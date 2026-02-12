@@ -146,11 +146,26 @@ export class PatientService {
             };
 
             if (status === 'Accepted' || status === 'Activate') {
-                if (status === 'Accepted') {
-                    functionName = 'createEHRRecord';
-                } else if (status === 'Activate') {
+                // Check if record already exists on blockchain to decide between create and activate
+                let recordExists = false;
+                try {
+                    await fabricService.evaluateTransaction(
+                        'mychannel',
+                        'ehr',
+                        'getEHRRecord',
+                        [pid, did],
+                        pid,
+                        mspId
+                    );
+                    recordExists = true;
+                } catch (e) {
+                    // Record does not exist or error
+                    recordExists = false;
+                }
+
+                if (recordExists) {
                     functionName = 'activateAccess';
-                } else { // Fallback
+                } else {
                     functionName = 'createEHRRecord';
                 }
 
@@ -243,6 +258,51 @@ export class PatientService {
             return record.transactions || [];
         } catch (error) {
             console.error('Error getting history:', error);
+            return [];
+        }
+    }
+
+    /**
+     * Get full transaction history for a patient across all doctors
+     */
+    public async getPatientFullHistory(pid: string, mspId: string): Promise<Transaction[]> {
+        try {
+            // Get all records for the patient (one per doctor)
+            const result = await fabricService.evaluateTransaction(
+                'mychannel',
+                'ehr',
+                'getAllEHRRecordByPatient',
+                [pid],
+                pid,
+                mspId
+            );
+
+            const allRecords = JSON.parse(result);
+            let allTransactions: Transaction[] = [];
+
+            // Aggregate transactions from all records
+            if (Array.isArray(allRecords)) {
+                allRecords.forEach((record: any) => {
+                    if (record.transactions && Array.isArray(record.transactions)) {
+                        // Enrich transactions with doctorId from the parent record
+                        // Since the record key is [patientId, doctorId], all transactions in it belong to this doctor context
+                        const enrichedTransactions = record.transactions.map((tx: any) => ({
+                            ...tx,
+                            doctorId: record.doctorId
+                        }));
+                        allTransactions = allTransactions.concat(enrichedTransactions);
+                    }
+                });
+            }
+
+            // Sort by timestamp descending
+            allTransactions.sort((a, b) => {
+                return new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime();
+            });
+
+            return allTransactions;
+        } catch (error) {
+            console.error('Error getting full patient history:', error);
             return [];
         }
     }

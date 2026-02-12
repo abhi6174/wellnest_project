@@ -19,13 +19,18 @@ import {
   Fade,
   useTheme,
   useMediaQuery,
-  Avatar
+  Avatar,
+  List,
+  ListItem,
+  ListItemText,
+  ListItemAvatar,
+  Divider,
 } from '@mui/material';
 import {
   Logout as LogoutIcon,
   ArrowBack as ArrowBackIcon,
   Save as SaveIcon,
-  Edit as EditIcon,
+  Add as AddIcon,
   LocalHospital as LocalHospitalIcon,
   MedicalServices as MedicalServicesIcon,
   Person as PersonIcon,
@@ -34,31 +39,55 @@ import {
   Medication as MedicationIcon,
   Vaccines as VaccinesIcon,
   Assessment as AssessmentIcon,
-  Healing as HealingIcon
+  Healing as HealingIcon,
+  EventNote as EventNoteIcon
 } from '@mui/icons-material';
+
+interface IEhrRecord {
+  recordId: string;
+  timestamp: string;
+  doctorId: string;
+  diagnosis?: string;
+  treatment?: string;
+  medications?: string;
+  doctorNotes?: string;
+  patientHistory?: string;
+  allergies?: string;
+  labResults?: string;
+  imagingReports?: string;
+  vitalSigns?: string;
+  familyHistory?: string;
+  lifestyleFactors?: string;
+  immunizations?: string;
+  carePlan?: string;
+  followUpInstructions?: string;
+  hash?: string;
+  [key: string]: any;
+}
 
 const EHRViewer = () => {
   const { patientId } = useParams();
-  const navigate = useNavigate();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
-  
-  const [ehrData, setEhrData] = useState({});
-  const [isEditing, setIsEditing] = useState(false);
+
+  const [records, setRecords] = useState<IEhrRecord[]>([]);
+  const [selectedRecord, setSelectedRecord] = useState<Partial<IEhrRecord>>({});
+  const [isAdding, setIsAdding] = useState(false);
+  const [formData, setFormData] = useState<Partial<IEhrRecord>>({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [activeCategory, setActiveCategory] = useState('all');
 
-  // Define categories for the EHR fields with enhanced icons
+  // Define categories (same as before)
   const categories = [
     { id: 'all', label: 'All Records', icon: <DescriptionIcon />, color: '#2196f3' },
     { id: 'diagnosis', label: 'Diagnosis & Treatment', icon: <MedicalServicesIcon />, color: '#00bcd4' },
     { id: 'history', label: 'Patient History', icon: <PersonIcon />, color: '#4caf50' }
   ];
 
-  // Define EHR fields with user-friendly labels, categories, and icons
+  // Define EHR fields (same as before)
   const ehrFields = [
     { id: 'diagnosis', label: 'Diagnosis', category: 'diagnosis', icon: <HealingIcon /> },
     { id: 'treatment', label: 'Treatment Plan', category: 'diagnosis', icon: <MedicalServicesIcon /> },
@@ -84,17 +113,40 @@ const EHRViewer = () => {
     setLoading(true);
     try {
       const storedPatientId = patientId || localStorage.getItem('patientId');
-      
+
       const response = await fetch(`http://localhost:8080/fabric/doctor/view-ehr?patientId=${storedPatientId}`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('jwt')}`
         }
       });
 
+      if (response.status === 404) {
+        // No records found is not an error here, just empty list
+        setRecords([]);
+        setSelectedRecord({});
+        setLoading(false);
+        return;
+      }
+
       if (!response.ok) throw new Error('Failed to fetch EHR data');
-      
+
       const data = await response.json();
-      setEhrData(data);
+
+      // Data should be an array of records
+      if (Array.isArray(data)) {
+        setRecords(data);
+        // Select the latest record by default if exists
+        if (data.length > 0) {
+          setSelectedRecord(data[data.length - 1]);
+        } else {
+          setSelectedRecord({});
+        }
+      } else {
+        // Handle legacy single object if backend returns it (though we changed it)
+        setRecords([data]);
+        setSelectedRecord(data);
+      }
+
     } catch (error) {
       console.error('Error fetching EHR:', error);
       setError('Failed to load EHR data. Please try again.');
@@ -104,15 +156,7 @@ const EHRViewer = () => {
   };
 
   const handleLogout = () => {
-    // Clear all authentication data
-    localStorage.removeItem('jwt');
-    localStorage.removeItem('username');
-    localStorage.removeItem('mspId');
-    localStorage.removeItem('patientId');
-    localStorage.removeItem('doctorId');
-    localStorage.removeItem('historyData');
-    
-    // Force immediate navigation to login
+    localStorage.clear();
     window.location.href = '/login';
   };
 
@@ -120,12 +164,27 @@ const EHRViewer = () => {
     window.location.href = '/doctor';
   };
 
-  const handleEdit = () => {
-    setIsEditing(true);
+  const handleAddRecord = () => {
+    setIsAdding(true);
+    setFormData({}); // Clear form for new entry
+    setSelectedRecord({}); // Clear view
   };
 
-  const handleChange = (field, value) => {
-    setEhrData(prev => ({
+  const handleCancelAdd = () => {
+    setIsAdding(false);
+    // Re-select latest record
+    if (records.length > 0) {
+      setSelectedRecord(records[records.length - 1]);
+    }
+  };
+
+  const handleSelectRecord = (record: IEhrRecord) => {
+    setSelectedRecord(record);
+    setIsAdding(false);
+  };
+
+  const handleChange = (field: string, value: string) => {
+    setFormData(prev => ({
       ...prev,
       [field]: value
     }));
@@ -135,26 +194,24 @@ const EHRViewer = () => {
     setSaving(true);
     try {
       const storedPatientId = patientId || localStorage.getItem('patientId');
-      
-      const response = await fetch(`http://localhost:8080/fabric/doctor/update-ehr?patientId=${storedPatientId}`, {
+
+      const response = await fetch(`http://localhost:8080/fabric/doctor/add-record?patientId=${storedPatientId}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${localStorage.getItem('jwt')}`
         },
-        body: JSON.stringify({
-          patientId: storedPatientId,
-          ...ehrData
-        })
+        body: JSON.stringify(formData)
       });
 
-      if (!response.ok) throw new Error('Failed to update EHR');
-      
-      setSuccess('EHR updated successfully!');
-      setIsEditing(false);
+      if (!response.ok) throw new Error('Failed to save record');
+
+      setSuccess('New EHR record added successfully!');
+      setIsAdding(false);
+      fetchEHR(); // Refresh list
     } catch (error) {
       console.error('Error:', error);
-      setError('Failed to update EHR data. Please try again.');
+      setError('Failed to save record. Please try again.');
     } finally {
       setSaving(false);
     }
@@ -166,13 +223,13 @@ const EHRViewer = () => {
   };
 
   // Filter fields based on active category
-  const filteredFields = ehrFields.filter(field => 
+  const filteredFields = ehrFields.filter(field =>
     activeCategory === 'all' || field.category === activeCategory
   );
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', bgcolor: '#f8fafc' }}>
-      <AppBar position="fixed" elevation={2} sx={{ 
+      <AppBar position="fixed" elevation={2} sx={{
         background: 'linear-gradient(135deg, #0d47a1 0%, #1565c0 100%)',
       }}>
         <Toolbar>
@@ -180,323 +237,212 @@ const EHRViewer = () => {
             <Avatar sx={{ bgcolor: 'white', color: '#0d47a1', mr: 2 }}>
               <LocalHospitalIcon />
             </Avatar>
-            <Typography variant="h6" component="div" sx={{ 
-              flexGrow: 1, 
-              fontWeight: 700, 
-              color:'#fff',
+            <Typography variant="h6" component="div" sx={{
+              flexGrow: 1,
+              fontWeight: 700,
+              color: '#fff',
               letterSpacing: '0.5px'
             }}>
               {isMobile ? 'EHR' : 'WellNest EHR System'}
             </Typography>
           </Box>
-
           <Box sx={{ flexGrow: 1 }} />
-
-          <Typography variant="body2" sx={{ 
-            mr: 2, 
-            color: 'rgba(255, 255, 255, 0.85)',
-            display: { xs: 'none', sm: 'block' }
-          }}>
-            Patient ID: {patientId || localStorage.getItem('patientId')}
-          </Typography>
-
-          <IconButton 
-            color="inherit" 
-            onClick={handleGoBack}
-            sx={{ 
-              mr: 1, 
-              bgcolor: 'rgba(255,255,255,0.1)',
-              '&:hover': { bgcolor: 'rgba(255,255,255,0.2)' }
-            }}
-            aria-label="Go back"
-          >
+          <IconButton color="inherit" onClick={handleGoBack} sx={{ mr: 1, bgcolor: 'rgba(255,255,255,0.1)' }}>
             <ArrowBackIcon />
           </IconButton>
-          <IconButton 
-            color="inherit" 
-            onClick={handleLogout}
-            sx={{ 
-              bgcolor: 'rgba(255,255,255,0.1)',
-              '&:hover': { bgcolor: 'rgba(255,255,255,0.2)' }
-            }}
-            aria-label="Logout"
-          >
+          <IconButton color="inherit" onClick={handleLogout} sx={{ bgcolor: 'rgba(255,255,255,0.1)' }}>
             <LogoutIcon />
           </IconButton>
         </Toolbar>
       </AppBar>
 
-      <Box component="main" sx={{ flexGrow: 1, pt: 10, pb: 4 }}>
-        <Container maxWidth="lg">
-          {/* Header with patient info */}
-          <Paper 
-            elevation={0} 
-            sx={{ 
-              p: 3, 
-              mb: 3, 
-              borderRadius: 2,
-              background: 'linear-gradient(135deg, #043B89 0%, #0d47a1 100%)',
-              color:'#fff',
-              boxShadow: '0 4px 20px rgba(13, 71, 161, 0.15)'
-            }}
-          >
-            <Grid container spacing={2} alignItems="center">
-              <Grid item xs={12} sm={isMobile ? 12 : 8}>
-                <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                  <Avatar sx={{ bgcolor: 'white', color: '#0d47a1', mr: 2 }}>
-                    <PersonIcon />
-                  </Avatar>
-                  <Typography variant="h5" component="h1" fontWeight={700}>
-                    Patient Health Record
-                  </Typography>
+      <Box component="main" sx={{ flexGrow: 1, pt: 10, pb: 4, px: 2 }}>
+        <Container maxWidth="xl">
+          <Grid container spacing={3}>
+            {/* Left Sidebar: History List */}
+            <Grid item xs={12} md={3}>
+              <Paper elevation={0} sx={{ height: '100%', borderRadius: 2, overflow: 'hidden', border: '1px solid rgba(0,0,0,0.08)' }}>
+                <Box sx={{ p: 2, bgcolor: '#f5f5f5', borderBottom: '1px solid rgba(0,0,0,0.08)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <Typography variant="h6" fontWeight={600} color="primary">History</Typography>
+                  <Button
+                    variant="contained"
+                    size="small"
+                    startIcon={<AddIcon />}
+                    onClick={handleAddRecord}
+                    disabled={isAdding}
+                    sx={{ borderRadius: 4, textTransform: 'none' }}
+                  >
+                    New
+                  </Button>
                 </Box>
-                <Typography variant="body2" sx={{ opacity: 0.9, ml: 6 }}>
-                  Last updated: {new Date().toLocaleDateString()}
-                </Typography>
-              </Grid>
-              
-              <Grid item xs={12} sm={isMobile ? 12 : 4} sx={{ display: 'flex', justifyContent: { xs: 'flex-start', sm: 'flex-end' }, mt: { xs: 2, sm: 0 }, ml: { xs: 6, sm: 0 } }}>
-                {!isEditing ? (
-                  <Button
-                    variant="contained"
-                    startIcon={<EditIcon />}
-                    onClick={handleEdit}
-                    disableElevation
-                    sx={{ 
-                      borderRadius: 8, 
-                      px: 3, 
-                      py: 1,
-                      bgcolor: 'white',
-                      color: '#0d47a1',
-                      fontWeight: 600,
-                      '&:hover': { 
-                        bgcolor: 'rgba(255,255,255,0.9)',
-                      }
-                    }}
-                  >
-                    Edit Record
-                  </Button>
-                ) : (
-                  <Button
-                    variant="contained"
-                    startIcon={saving ? <CircularProgress size={20} color="inherit" /> : <SaveIcon/>}
-                    onClick={handleSave}
-                    disabled={saving}
-                    disableElevation
-                    sx={{ 
-                      borderRadius: 8, 
-                      px: 3, 
-                      py: 1,
-                      bgcolor: '#4caf50',
-                      fontWeight: 600, 
-                      '&:hover': { 
-                        bgcolor: '#43a047' 
-                      }
-                    }}
-                  >
-                    Save Changes
-                  </Button>
-                )}
-              </Grid>
-            </Grid>
-          </Paper>
-
-          {/* Categories navigation */}
-          <Paper 
-            elevation={0} 
-            sx={{ 
-              p: 1.5, 
-              mb: 3, 
-              display: 'flex', 
-              overflowX: 'auto',
-              borderRadius: 2,
-              bgcolor: 'white',
-              boxShadow: '0 2px 10px rgba(0,0,0,0.05)',
-              '&::-webkit-scrollbar': { height: '4px' },
-              '&::-webkit-scrollbar-thumb': { backgroundColor: 'rgba(0,0,0,0.2)', borderRadius: '4px' }
-            }}
-          >
-            <Box sx={{ display: 'flex', gap: 1.5, px: 1 }}>
-              {categories.map((category) => (
-                <Chip
-                  key={category.id}
-                  icon={category.icon}
-                  label={category.label}
-                  onClick={() => setActiveCategory(category.id)}
-                  color={activeCategory === category.id ? "primary" : "default"}
-                  variant={activeCategory === category.id ? "filled" : "outlined"}
-                  sx={{ 
-                    px: 1,
-                    py: 2.5,
-                    borderRadius: '16px',
-                    fontWeight: 500,
-                    '& .MuiChip-icon': { 
-                      color: activeCategory === category.id ? 'inherit' : category.color 
-                    },
-                    transition: 'all 0.2s ease'
-                  }}
-                />
-              ))}
-            </Box>
-          </Paper>
-
-          {/* EHR content */}
-          {loading ? (
-            <Paper sx={{ 
-              display: 'flex', 
-              justifyContent: 'center', 
-              alignItems: 'center',
-              flexDirection: 'column',
-              p: 8, 
-              borderRadius: 2,
-              bgcolor: 'white',
-              boxShadow: '0 2px 10px rgba(0,0,0,0.05)',
-            }}>
-              <CircularProgress sx={{ color: '#0d47a1' }} />
-              <Typography sx={{ mt: 2, color: 'text.secondary' }}>Loading patient records...</Typography>
-            </Paper>
-          ) : (
-            <Grid container spacing={3}>
-              {filteredFields.map((field) => (
-                <Grid item xs={12} md={6} key={field.id}>
-                  <Fade in={true} style={{ transitionDelay: '100ms' }}>
-                    <Paper 
-                      elevation={0} 
-                      sx={{ 
-                        height: '100%', 
-                        borderRadius: 2,
-                        bgcolor: 'white',
-                        boxShadow: '0 2px 10px rgba(0,0,0,0.05)',
-                        transition: 'all 0.3s',
-                        border: '1px solid rgba(0,0,0,0.05)',
-                        '&:hover': {
-                          boxShadow: '0 4px 20px rgba(0,0,0,0.1)',
-                          borderColor: 'rgba(13, 71, 161, 0.2)',
-                        }
-                      }}
-                    >
-                      <CardContent sx={{ height: '100%' }}>
-                        <Box sx={{ 
-                          display: 'flex', 
-                          alignItems: 'center', 
-                          mb: 2,
-                          pb: 1.5,
-                          borderBottom: '1px solid',
-                          borderColor: 'rgba(0,0,0,0.08)'
-                        }}>
-                          <Avatar 
-                            sx={{ 
-                              bgcolor: 'rgba(13, 71, 161, 0.1)', 
-                              color: '#0d47a1',
-                              mr: 1.5,
-                              width: 32,
-                              height: 32
-                            }}
-                          >
-                            {field.icon}
-                          </Avatar>
-                          <Typography 
-                            variant="subtitle1" 
-                            fontWeight={600} 
-                            color="#0d47a1"
-                          >
-                            {field.label}
-                          </Typography>
-                        </Box>
-                        
-                        {isEditing ? (
-                          <TextField
-                            fullWidth
-                            multiline
-                            rows={4}
-                            value={ehrData[field.id] || ''}
-                            onChange={(e) => handleChange(field.id, e.target.value)}
-                            variant="outlined"
-                            placeholder={`Add ${field.label.toLowerCase()} details here...`}
-                            sx={{ 
-                              mt: 1,
-                              '& .MuiOutlinedInput-root': {
-                                borderRadius: 2,
-                                fontSize: '0.95rem'
-                              }
-                            }}
+                <List sx={{ overflowY: 'auto', maxHeight: 'calc(100vh - 200px)' }}>
+                  {records.length === 0 ? (
+                    <Typography sx={{ p: 2, color: 'text.secondary', textAlign: 'center' }}>No history found.</Typography>
+                  ) : (
+                    records.slice().reverse().map((record, index) => (
+                      <React.Fragment key={record.recordId || index}>
+                        <ListItem
+                          button
+                          selected={selectedRecord.recordId === record.recordId && !isAdding}
+                          onClick={() => handleSelectRecord(record)}
+                          sx={{
+                            '&.Mui-selected': { bgcolor: 'rgba(13, 71, 161, 0.08)', borderLeft: '4px solid #0d47a1' },
+                            '&:hover': { bgcolor: 'rgba(0,0,0,0.04)' }
+                          }}
+                        >
+                          <ListItemAvatar>
+                            <Avatar sx={{ bgcolor: '#e3f2fd', color: '#0d47a1' }}>
+                              <EventNoteIcon fontSize="small" />
+                            </Avatar>
+                          </ListItemAvatar>
+                          <ListItemText
+                            primary={new Date(record.timestamp).toLocaleDateString()}
+                            secondary={`Dr. ${record.doctorId}`}
+                            primaryTypographyProps={{ fontWeight: 600, fontSize: '0.9rem' }}
                           />
-                        ) : (
-                          <Typography 
-                            variant="body1" 
-                            sx={{ 
-                              mt: 1, 
-                              minHeight: '80px',
-                              color: ehrData[field.id] ? 'text.primary' : 'text.disabled',
-                              whiteSpace: 'pre-line',
-                              fontSize: '0.95rem',
-                              lineHeight: 1.7
-                            }}
-                          >
-                            {ehrData[field.id] || 'No data available'}
-                          </Typography>
-                        )}
-                      </CardContent>
-                    </Paper>
-                  </Fade>
-                </Grid>
-              ))}
+                        </ListItem>
+                        <Divider component="li" />
+                      </React.Fragment>
+                    ))
+                  )}
+                </List>
+              </Paper>
             </Grid>
-          )}
+
+            {/* Right Side: Detail View / Add Form */}
+            <Grid item xs={12} md={9}>
+              <Paper
+                elevation={0}
+                sx={{
+                  p: 3,
+                  mb: 3,
+                  borderRadius: 2,
+                  background: 'linear-gradient(135deg, #043B89 0%, #0d47a1 100%)',
+                  color: '#fff',
+                  boxShadow: '0 4px 20px rgba(13, 71, 161, 0.15)'
+                }}
+              >
+                <Grid container alignItems="center">
+                  <Grid item xs={8}>
+                    <Typography variant="h5" fontWeight={700}>
+                      {isAdding ? 'New Medical Entry' : `Visit Details: ${selectedRecord.timestamp ? new Date(selectedRecord.timestamp!).toLocaleDateString() : 'Select a record'}`}
+                    </Typography>
+                    {!isAdding && selectedRecord.doctorId && (
+                      <Typography variant="subtitle2" sx={{ opacity: 0.8, mt: 0.5 }}>
+                        Recorded by: Dr. {selectedRecord.doctorId}
+                      </Typography>
+                    )}
+                  </Grid>
+                  <Grid item xs={4} sx={{ textAlign: 'right' }}>
+                    {isAdding && (
+                      <Box>
+                        <Button
+                          variant="outlined"
+                          color="inherit"
+                          onClick={handleCancelAdd}
+                          sx={{ mr: 1, borderRadius: 4 }}
+                        >
+                          Cancel
+                        </Button>
+                        <Button
+                          variant="contained"
+                          color="success"
+                          startIcon={saving ? <CircularProgress size={20} color="inherit" /> : <SaveIcon />}
+                          onClick={handleSave}
+                          disabled={saving}
+                          sx={{ borderRadius: 4, bgcolor: '#4caf50', '&:hover': { bgcolor: '#43a047' } }}
+                        >
+                          Save
+                        </Button>
+                      </Box>
+                    )}
+                  </Grid>
+                </Grid>
+              </Paper>
+
+              {/* Categories */}
+              <Paper sx={{ p: 1.5, mb: 3, display: 'flex', overflowX: 'auto', borderRadius: 2 }}>
+                <Box sx={{ display: 'flex', gap: 1.5 }}>
+                  {categories.map((category) => (
+                    <Chip
+                      key={category.id}
+                      icon={category.icon}
+                      label={category.label}
+                      onClick={() => setActiveCategory(category.id)}
+                      color={activeCategory === category.id ? "primary" : "default"}
+                      variant={activeCategory === category.id ? "filled" : "outlined"}
+                    />
+                  ))}
+                </Box>
+              </Paper>
+
+              {/* Content */}
+              {loading ? (
+                <Box sx={{ display: 'flex', justifyContent: 'center', p: 8 }}><CircularProgress /></Box>
+              ) : (
+                <Grid container spacing={3}>
+                  {filteredFields.map((field) => (
+                    <Grid item xs={12} md={6} key={field.id}>
+                      <Fade in={true}>
+                        <Paper elevation={0} sx={{ height: '100%', borderRadius: 2, border: '1px solid rgba(0,0,0,0.05)' }}>
+                          <CardContent>
+                            <Box sx={{ display: 'flex', alignItems: 'center', mb: 2, borderBottom: '1px solid rgba(0,0,0,0.08)', pb: 1 }}>
+                              <Avatar sx={{ bgcolor: 'rgba(13, 71, 161, 0.1)', color: '#0d47a1', mr: 1.5, width: 32, height: 32 }}>
+                                {field.icon}
+                              </Avatar>
+                              <Typography variant="subtitle1" fontWeight={600} color="#0d47a1">
+                                {field.label}
+                              </Typography>
+                            </Box>
+
+                            {isAdding ? (
+                              <TextField
+                                fullWidth
+                                multiline
+                                rows={4}
+                                value={formData[field.id] || ''}
+                                onChange={(e) => handleChange(field.id, e.target.value)}
+                                placeholder={`Enter ${field.label.toLowerCase()}...`}
+                                variant="outlined"
+                              />
+                            ) : (
+                              <Typography
+                                variant="body1"
+                                sx={{
+                                  whiteSpace: 'pre-line',
+                                  color: selectedRecord[field.id] ? 'text.primary' : 'text.disabled',
+                                  minHeight: '60px'
+                                }}
+                              >
+                                {selectedRecord[field.id] || 'No data recorded.'}
+                              </Typography>
+                            )}
+                          </CardContent>
+                        </Paper>
+                      </Fade>
+                    </Grid>
+                  ))}
+                </Grid>
+              )}
+            </Grid>
+          </Grid>
         </Container>
       </Box>
 
       {/* Footer */}
-      <Box 
-        component="footer" 
-        sx={{ 
-          py: 3, 
-          bgcolor: 'white', 
-          borderTop: '1px solid',
-          borderColor: 'rgba(0,0,0,0.08)'
-        }}
-      >
+      <Box component="footer" sx={{ py: 3, bgcolor: 'white', borderTop: '1px solid rgba(0,0,0,0.08)' }}>
         <Container maxWidth="lg">
-          <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-            <LocalHospitalIcon sx={{ color: '#0d47a1', mr: 1, fontSize: 20 }} />
-            <Typography variant="body2" color="text.secondary" align="center" fontWeight={500}>
-              &copy; 2025 WellNest. All Rights Reserved.
-            </Typography>
-          </Box>
+          <Typography variant="body2" color="text.secondary" align="center">
+            &copy; 2025 WellNest. All Rights Reserved.
+          </Typography>
         </Container>
       </Box>
 
-      {/* Alerts */}
-      <Snackbar 
-        open={!!error} 
-        autoHideDuration={6000} 
-        onClose={handleCloseAlert}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-      >
-        <Alert 
-          onClose={handleCloseAlert} 
-          severity="error" 
-          variant="filled"
-          sx={{ width: '100%', borderRadius: 8 }}
-        >
-          {error}
-        </Alert>
+      <Snackbar open={!!error} autoHideDuration={6000} onClose={handleCloseAlert}>
+        <Alert severity="error" onClose={handleCloseAlert}>{error}</Alert>
       </Snackbar>
-      
-      <Snackbar 
-        open={!!success} 
-        autoHideDuration={6000} 
-        onClose={handleCloseAlert}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-      >
-        <Alert 
-          onClose={handleCloseAlert} 
-          severity="success" 
-          variant="filled"
-          sx={{ width: '100%', borderRadius: 8 }}
-        >
-          {success}
-        </Alert>
+      <Snackbar open={!!success} autoHideDuration={6000} onClose={handleCloseAlert}>
+        <Alert severity="success" onClose={handleCloseAlert}>{success}</Alert>
       </Snackbar>
     </Box>
   );

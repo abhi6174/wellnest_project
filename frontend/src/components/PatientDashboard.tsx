@@ -4,8 +4,6 @@ import { useNavigate } from 'react-router-dom';
 import {
   Box,
   Typography,
-  AppBar,
-  Toolbar,
   Container,
   Grid,
   Card,
@@ -13,41 +11,40 @@ import {
   Button,
   Tabs,
   Tab,
-  Divider,
   Avatar,
   Paper,
   CircularProgress,
   Alert,
   Snackbar,
-  IconButton,
   Chip,
   useTheme,
   useMediaQuery
 } from '@mui/material';
-import { alpha } from '@mui/material/styles';
 import {
-  Logout as LogoutIcon,
   Person as PersonIcon,
   Check as CheckIcon,
   Close as CloseIcon,
   History as HistoryIcon,
   PersonOutline as DoctorIcon,
-  Refresh as RefreshIcon,
   AccessTime as PendingIcon,
   CheckCircleOutline as AcceptedIcon,
-  Dashboard as DashboardIcon,
-  AccountCircle as AccountCircleIcon,
   Description as DescriptionIcon
 } from '@mui/icons-material';
 import { logout } from '../utils/auth';
 
+interface Doctor {
+  requestId?: string;
+  did: string;
+  status: string;
+}
+
 const PatientDashboard = () => {
   const [tabValue, setTabValue] = useState(0);
-  const [acceptedDoctors, setAcceptedDoctors] = useState([]);
-  const [pendingDoctors, setPendingDoctors] = useState([]);
+  const [acceptedDoctors, setAcceptedDoctors] = useState<Doctor[]>([]);
+  const [pendingDoctors, setPendingDoctors] = useState<Doctor[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [actionLoading, setActionLoading] = useState(null);
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [username, setUsername] = useState('');
@@ -103,26 +100,12 @@ const PatientDashboard = () => {
     }
   };
 
-  const handleRefresh = () => {
-    setRefreshing(true);
-    fetchDoctorData();
-  };
-
-  const handleTabChange = (event, newValue) => {
+  const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
     setTabValue(newValue);
   };
 
   const handleLogout = () => {
-    // Clear all authentication data
-    localStorage.removeItem('jwt');
-    localStorage.removeItem('username');
-    localStorage.removeItem('mspId');
-    localStorage.removeItem('patientId');
-    localStorage.removeItem('doctorId');
-    localStorage.removeItem('historyData');
-
-    // Force immediate navigation to login
-    window.location.href = '/login';
+    logout();
   };
 
   const handleViewEHR = async () => {
@@ -142,7 +125,7 @@ const PatientDashboard = () => {
     }
   };
 
-  const handleAction = async (action, doctorId, isPending = false) => {
+  const handleAction = async (action: string, doctorId: string, isPending = false) => {
     if (!doctorId) {
       setError('Doctor ID is missing. Please try again.');
       return;
@@ -161,14 +144,14 @@ const PatientDashboard = () => {
       if (!response.ok) throw new Error(`Failed to ${status.toLowerCase()} doctor`);
 
       setSuccess(`Doctor ${status === 'Accept'
-          ? 'accepted'
-          : status === 'Rejected'
-            ? 'rejected'
-            : status === 'Revoked'
-              ? 'revoked'
-              : status === 'Activate'
-                ? 'activated'
-                : 'updated'
+        ? 'accepted'
+        : status === 'Rejected'
+          ? 'rejected'
+          : status === 'Revoked'
+            ? 'revoked'
+            : status === 'Activate'
+              ? 'activated'
+              : 'updated'
         } successfully!`);
       fetchDoctorData();
     } catch (error) {
@@ -179,7 +162,7 @@ const PatientDashboard = () => {
     }
   };
 
-  const viewHistory = (doctorId) => {
+  const viewHistory = (doctorId: string) => {
     navigate(`/history/${doctorId}`);
   };
 
@@ -189,7 +172,7 @@ const PatientDashboard = () => {
   };
 
   // Render doctor list items
-  const renderDoctorList = (doctors, isPending = false) => {
+  const renderDoctorList = (doctors: Doctor[], isPending = false) => {
     // if (doctors.length === 0) {
     //   return (
     //     <Box sx={{ 

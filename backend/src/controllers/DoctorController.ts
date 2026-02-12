@@ -65,13 +65,13 @@ router.get('/view-ehr', authMiddleware, async (req: AuthRequest, res: Response) 
         const did = req.user!.username;
         const mspId = req.user!.mspId;
 
-        const ehrDocument = await ehrService.getEhrDocument(patientId as string, did, mspId);
+        const records = await ehrService.getRecords(patientId as string, did, mspId);
 
-        if (ehrDocument) {
-            console.log('Returning EHR document');
-            res.status(200).json(ehrDocument);
+        if (records) {
+            console.log('Returning EHR records');
+            res.status(200).json(records);
         } else {
-            res.status(404).json({ message: 'EHR document not found or access denied' });
+            res.status(404).json({ message: 'EHR records not found or access denied' });
         }
     } catch (error) {
         console.error('View EHR error:', error);
@@ -86,9 +86,7 @@ router.get('/view-ehr', authMiddleware, async (req: AuthRequest, res: Response) 
 router.get('/requests', authMiddleware, async (req: AuthRequest, res: Response) => {
     try {
         const did = req.user!.username;
-
         const requests = await Pending.find({ did });
-
         res.status(200).json(requests);
     } catch (error) {
         console.error('Get requests error:', error);
@@ -97,13 +95,13 @@ router.get('/requests', authMiddleware, async (req: AuthRequest, res: Response) 
 });
 
 /**
- * POST /fabric/doctor/update-ehr
- * Update patient EHR
+ * POST /fabric/doctor/add-record
+ * Add new EHR record for patient
  */
-router.post('/update-ehr', authMiddleware, async (req: AuthRequest, res: Response) => {
+router.post('/add-record', authMiddleware, async (req: AuthRequest, res: Response) => {
     try {
         const { patientId } = req.query;
-        const updatedEhrDocument = req.body;
+        const recordData = req.body;
 
         if (!patientId) {
             res.status(400).json({ message: 'Patient ID is required' });
@@ -113,18 +111,18 @@ router.post('/update-ehr', authMiddleware, async (req: AuthRequest, res: Respons
         const did = req.user!.username;
         const mspId = req.user!.mspId;
 
-        const isUpdated = await ehrService.updateEhr(did, patientId as string, mspId, updatedEhrDocument);
+        const isAdded = await ehrService.addRecord(patientId as string, did, recordData, mspId);
 
-        if (isUpdated) {
-            console.log('EHR document updated successfully!');
-            res.status(200).send('EHR document updated successfully!');
+        if (isAdded) {
+            console.log('EHR record added successfully!');
+            res.status(200).send('EHR record added successfully!');
         } else {
-            console.log('Patient not found.');
-            res.status(404).send('Patient not found.');
+            console.log('Failed to add record.');
+            res.status(500).send('Failed to add record.');
         }
     } catch (error) {
-        console.error('Update EHR error:', error);
-        res.status(500).json({ message: 'Failed to update EHR' });
+        console.error('Add EHR record error:', error);
+        res.status(500).json({ message: 'Failed to add EHR record' });
     }
 });
 

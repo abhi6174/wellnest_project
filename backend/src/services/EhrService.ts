@@ -1,39 +1,20 @@
-import CryptoJS from 'crypto-js';
-import * as crypto from 'crypto';
-import { Patient } from '../models/Patient';
+import { Patient, IEhrRecord } from '../models/Patient';
 import { Pending } from '../models/Pending';
-import { EhrDocument } from '../types/EhrDocument';
-import { config } from '../config';
+
 import { doctorService } from './DoctorService';
+import { v4 as uuidv4 } from 'uuid';
+import * as crypto from 'crypto';
 
 export class EhrService {
     private static instance: EhrService;
-    private readonly SECRET_KEY: string;
 
-    private constructor() {
-        this.SECRET_KEY = config.encryption.secretKey;
-    }
+    private constructor() { }
 
     public static getInstance(): EhrService {
         if (!EhrService.instance) {
             EhrService.instance = new EhrService();
         }
         return EhrService.instance;
-    }
-
-    /**
-     * Encrypt data using AES
-     */
-    private encrypt(data: string): string {
-        return CryptoJS.AES.encrypt(data, this.SECRET_KEY).toString();
-    }
-
-    /**
-     * Decrypt data using AES
-     */
-    private decrypt(encryptedData: string): string {
-        const bytes = CryptoJS.AES.decrypt(encryptedData, this.SECRET_KEY);
-        return bytes.toString(CryptoJS.enc.Utf8);
     }
 
     /**
@@ -45,156 +26,137 @@ export class EhrService {
     }
 
     /**
-     * Add EHR document for a patient
+     * Add a new EHR record to the patient's history
      */
-    public async addEhrDocument(patientId: string, document: EhrDocument): Promise<void> {
+    public async addRecord(
+        patientId: string,
+        doctorId: string,
+        recordData: Partial<IEhrRecord>,
+        mspId: string
+    ): Promise<boolean> {
         try {
-            const ehrJson = JSON.stringify(document);
-            const encryptedEhr = this.encrypt(ehrJson);
+            let patient = await Patient.findOne({ patientId });
 
-            const patient = new Patient({
-                patientId,
-                ehrId: patientId,
-                ehrDocument: encryptedEhr,
-            });
+            if (!patient) {
+                // Create new patient entry if not exists (first record)
+                patient = new Patient({
+                    patientId,
+                    ehrId: patientId,
+                    records: []
+                });
+            }
 
+            const timestamp = new Date().toISOString();
+            const recordId = uuidv4();
+
+            // Create record object
+            const newRecord: IEhrRecord = {
+                recordId,
+                timestamp,
+                doctorId,
+                diagnosis: recordData.diagnosis || '',
+                treatment: recordData.treatment || '',
+                medications: recordData.medications || '',
+                doctorNotes: recordData.doctorNotes || '',
+                patientHistory: recordData.patientHistory || '',
+                allergies: recordData.allergies || '',
+                labResults: recordData.labResults || '',
+                imagingReports: recordData.imagingReports || '',
+                vitalSigns: recordData.vitalSigns || '',
+                familyHistory: recordData.familyHistory || '',
+                lifestyleFactors: recordData.lifestyleFactors || '',
+                immunizations: recordData.immunizations || '',
+                carePlan: recordData.carePlan || '',
+                followUpInstructions: recordData.followUpInstructions || '',
+                hash: '' // Calculated below
+            };
+
+            // Calculate hash
+            const hash = this.getHash(newRecord);
+            newRecord.hash = hash;
+
+            // Save to MongoDB
+            patient.records.push(newRecord);
             await patient.save();
-            console.log(`EHR document added for patient: ${patientId}`);
+            console.log(`EHR record added for patient: ${patientId} by doctor: ${doctorId}`);
+
+            // Log to Blockchain (Audit Trail)
+            try {
+                await doctorService.addUpdate(doctorId, patientId, hash, mspId);
+            } catch (bcError) {
+                console.error('Failed to log update to blockchain:', bcError);
+            }
+
+            return true;
         } catch (error) {
-            console.error('Error adding EHR document:', error);
+            console.error('Error adding EHR record:', error);
             throw error;
         }
     }
 
     /**
-     * Get EHR document for patient (patient's own access)
+     * Get all records for a patient (Patient View)
      */
-    public async getEhrDocumentForPatient(patientId: string, _mspId: string): Promise<EhrDocument | null> {
+    public async getRecordsForPatient(patientId: string): Promise<IEhrRecord[]> {
         try {
             const patient = await Patient.findOne({ patientId });
-
-            if (!patient) {
-                return null;
-            }
-
-            const encryptedEhr = patient.ehrDocument;
-            const decryptedEhrJson = this.decrypt(encryptedEhr);
-
-            return JSON.parse(decryptedEhrJson) as EhrDocument;
+            if (!patient) return [];
+            return patient.records;
         } catch (error) {
-            console.error('Error getting EHR document for patient:', error);
-            return null;
+            console.error('Error getting records for patient:', error);
+            return [];
         }
     }
 
     /**
-     * Get EHR document with doctor access control
+     * Get all records for a patient (Doctor View) with access control
      */
-    public async getEhrDocument(
+    public async getRecords(
         patientId: string,
-        did: string,
+        doctorId: string,
         mspId: string
-    ): Promise<EhrDocument | null> {
+    ): Promise<IEhrRecord[]> {
         try {
-            const patient = await Patient.findOne({ patientId });
-
-            if (!patient) {
-                return null;
-            }
-
-            const encryptedEhr = patient.ehrDocument;
-            const decryptedEhrJson = this.decrypt(encryptedEhr);
-            const ehrDocument = JSON.parse(decryptedEhrJson) as EhrDocument;
-
-            const hash = this.getHash(ehrDocument);
-
-            // 1. Verify access permission (Database check)
-            const isApproved = await this.isAccessApproved(patientId, did);
-
+            const isApproved = await this.isAccessApproved(patientId, doctorId);
             if (!isApproved) {
-                console.log(`Access denied for Doctor ${did} to Patient ${patientId}`);
-                return null;
+                console.log(`Access denied for Doctor ${doctorId} to Patient ${patientId}`);
+                return [];
             }
 
-            // 2. Log access to blockchain (Non-blocking)
-            // We await it to ensure it triggers, but catch errors so we don't block the view
-            // due to concurrency/endorsement issues on the audit log.
-            try {
-                await doctorService.addAccess(did, patientId, hash, mspId);
-                console.log('Access logged to blockchain');
-            } catch (logError) {
-                console.warn('Failed to log access to blockchain (Audit Log):', logError);
-                // Continue to return document even if logging fails
-            }
-
-            return ehrDocument;
-        } catch (error) {
-            console.error('Error getting EHR document:', error);
-            return null;
-        }
-    }
-
-    /**
-     * Update EHR document
-     */
-    public async updateEhr(
-        did: string,
-        patientId: string,
-        mspId: string,
-        ehrDocument: EhrDocument
-    ): Promise<boolean> {
-        try {
             const patient = await Patient.findOne({ patientId });
+            if (!patient) return [];
 
-            if (!patient) {
-                return false;
+            // return all records
+            // Log access to the *latest* state
+            const latestRecord = patient.records[patient.records.length - 1];
+            const hash = latestRecord ? latestRecord.hash : this.getHash({});
+
+            try {
+                await doctorService.addAccess(doctorId, patientId, hash, mspId);
+            } catch (e) {
+                console.warn('Audit log failed', e);
             }
 
-            const hash = this.getHash(ehrDocument);
-
-            // Submit update to blockchain
-            const updateSuccess = await doctorService.addUpdate(did, patientId, hash, mspId);
-
-            if (updateSuccess) {
-                const ehrJson = JSON.stringify(ehrDocument);
-                const encrypted = this.encrypt(ehrJson);
-
-                patient.ehrDocument = encrypted;
-                await patient.save();
-
-                return true;
-            }
-
-            return false;
+            return patient.records;
         } catch (error) {
-            console.error('Error updating EHR:', error);
-            return false;
+            console.error('Error getting records:', error);
+            return [];
         }
     }
 
     /**
-     * Fetch PDF (decrypt EHR for patient)
+     * Generate SHA-256 hash of record data
      */
-    public async fetchPdf(pid: string): Promise<EhrDocument> {
-        const patient = await Patient.findOne({ patientId: pid });
-
-        if (!patient) {
-            throw new Error(`Patient not found with ID: ${pid}`);
-        }
-
-        const encryptedEHR = patient.ehrDocument;
-        const decryptedJson = this.decrypt(encryptedEHR);
-
-        return JSON.parse(decryptedJson) as EhrDocument;
+    public getHash(record: any): string {
+        // Create a copy to exclude hash field itself if present
+        const { hash, ...dataToHash } = record;
+        const dataString = JSON.stringify(dataToHash);
+        return crypto.createHash('sha256').update(dataString).digest('hex');
     }
 
-    /**
-     * Generate SHA-256 hash of EHR document
-     */
-    public getHash(ehrDocument: EhrDocument): string {
-        const ehrString = JSON.stringify(ehrDocument);
-        const hash = crypto.createHash('sha256').update(ehrString).digest('hex');
-        return hash;
+    // Legacy support methods
+    public async getEhrDocumentForPatient(patientId: string, _mspId: string) {
+        return this.getRecordsForPatient(patientId);
     }
 }
 

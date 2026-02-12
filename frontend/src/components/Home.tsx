@@ -12,7 +12,7 @@ interface HomeProps {
 interface Feature {
     title: string;
     description: string;
-    icon: React.ReactElement;
+    icon: React.ElementType;
 }
 
 const Home: React.FC<HomeProps> = ({ darkMode, toggleDarkMode }) => {
@@ -20,17 +20,17 @@ const Home: React.FC<HomeProps> = ({ darkMode, toggleDarkMode }) => {
         {
             title: 'Secure Data Management',
             description: 'Blockchain ensures tamper-proof medical records with comprehensive audit trails.',
-            icon: <FaShieldAlt />
+            icon: FaShieldAlt
         },
         {
             title: 'Enhanced Privacy',
             description: 'Patients retain complete ownership and granular control over their medical data.',
-            icon: <FaLock />
+            icon: FaLock
         },
         {
             title: 'Seamless Access',
             description: 'Healthcare providers access records with patient consent through a streamlined process.',
-            icon: <FaTabletAlt />
+            icon: FaTabletAlt
         }
     ];
 
@@ -111,7 +111,7 @@ const Home: React.FC<HomeProps> = ({ darkMode, toggleDarkMode }) => {
                             <div className="col-md-4 animate-fade-in delay-100" key={index} style={{ animationDelay: `${index * 100}ms` }}>
                                 <div className="feature-card h-100 d-flex flex-column align-items-center text-center">
                                     <div className="icon-box mb-4">
-                                        {React.cloneElement(feature.icon, { size: 24 })}
+                                        <feature.icon size={24} />
                                     </div>
                                     <h4 className="fw-bold mb-3">{feature.title}</h4>
                                     <p className="text-secondary mb-0">{feature.description}</p>

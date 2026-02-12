@@ -14,3 +14,15 @@ coverage/
 *.class
 *.jar
 *.war
+
+# Blockchain generated artifacts
+blockchain/artifacts/
+blockchain/channel-artifacts/
+blockchain/channel/crypto-config/
+blockchain/channel/*.block
+blockchain/channel/*.tx
+
+# Backend wallets and generated connection profiles
+backend/connection-profiles/*/wallet/
+backend/connection-profiles/*/*.json
+backend/connection-profiles/*/*.yaml

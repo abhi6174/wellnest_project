@@ -122,8 +122,27 @@ export class FabricUserRegistration {
                 console.log(`Successfully registered user "${username}"`);
             } catch (error: any) {
                 // Ignore if already registered
-                if (error.toString().includes('Identity already exists') || error.errors?.[0]?.code === 0) {
-                    console.log(`User "${username}" is already registered, proceeding to enrollment.`);
+                const errorMsg = error.toString();
+                const errorCode = error.errors?.[0]?.code;
+
+                // Check multiple conditions for "already registered"
+                // Code 74 verified from logs. String check as backup.
+                if (
+                    errorMsg.includes('Identity already exists') ||
+                    errorMsg.includes('is already registered') ||
+                    errorCode === 0 ||
+                    errorCode === 74
+                ) {
+                    console.log(`User "${username}" is already registered. Updating enrollment secret to match provided password...`);
+                    try {
+                        const identityService = caService.newIdentityService();
+                        // Reset the secret so enrollment succeeds with the new password
+                        await identityService.update(username, { enrollmentID: username, enrollmentSecret: password, affiliation: '' }, adminUser);
+                        console.log(`Successfully updated enrollment secret for "${username}"`);
+                    } catch (updateError) {
+                        console.error(`Failed to update enrollment secret for "${username}":`, updateError);
+                        // Continue to try enrollment anyway
+                    }
                 } else {
                     throw error;
                 }

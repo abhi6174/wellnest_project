@@ -17,6 +17,7 @@ import Home from './components/Home';
 import NotFound from './components/NotFound';
 import LoadingScreen from './components/LoadingScreen';
 import EHRView from './components/EHRViewerpat';
+import PatientHistory from './components/PatientHistory';
 const App: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [authenticated, setAuthenticated] = useState<boolean>(false);
@@ -183,6 +184,14 @@ const App: React.FC = () => {
             element={
               authenticated && userRole === 'patient' ?
                 <DoctorHistory /> :
+                <Navigate to="/login" replace />
+            }
+          />
+          <Route
+            path="/patient/history"
+            element={
+              authenticated && userRole === 'patient' ?
+                <PatientHistory /> :
                 <Navigate to="/login" replace />
             }
           />

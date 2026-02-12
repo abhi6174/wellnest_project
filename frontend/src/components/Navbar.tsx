@@ -1,8 +1,13 @@
-import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FaHeartbeat, FaSignOutAlt, FaUserCircle } from 'react-icons/fa';
 
-const Navbar = ({ title, username, onLogout }) => {
+interface NavbarProps {
+  title?: string;
+  username?: string;
+  onLogout?: () => void;
+}
+
+const Navbar = ({ title, username, onLogout }: NavbarProps) => {
   const navigate = useNavigate();
 
   const handleLogout = () => {

@@ -15,9 +15,13 @@ import {
   Chip,
   Fade,
   useTheme,
-  useMediaQuery,
   Avatar,
-  Button
+  Button,
+  List,
+  ListItem,
+  ListItemText,
+  ListItemAvatar,
+  Divider
 } from '@mui/material';
 import { alpha } from '@mui/material/styles';
 import {
@@ -32,15 +36,39 @@ import {
   Healing as HealingIcon,
   MedicalServices as MedicalServicesIcon,
   Dashboard as DashboardIcon,
-  AccountCircle as AccountCircleIcon
+  AccountCircle as AccountCircleIcon,
+  History as HistoryIcon,
+  EventNote as EventNoteIcon
 } from '@mui/icons-material';
+
+interface IEhrRecord {
+  recordId: string;
+  timestamp: string;
+  doctorId: string;
+  diagnosis?: string;
+  treatment?: string;
+  medications?: string;
+  doctorNotes?: string;
+  patientHistory?: string;
+  allergies?: string;
+  labResults?: string;
+  imagingReports?: string;
+  vitalSigns?: string;
+  familyHistory?: string;
+  lifestyleFactors?: string;
+  immunizations?: string;
+  carePlan?: string;
+  followUpInstructions?: string;
+  hash?: string;
+  [key: string]: any;
+}
 
 const EHRView = () => {
   const navigate = useNavigate();
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
-  
-  const [ehrData, setEhrData] = useState({});
+
+  const [records, setRecords] = useState<IEhrRecord[]>([]);
+  const [selectedRecord, setSelectedRecord] = useState<Partial<IEhrRecord>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [username, setUsername] = useState('');
@@ -79,7 +107,7 @@ const EHRView = () => {
     }
   }, []);
 
-  const fetchEHR = async (username) => {
+  const fetchEHR = async (username: string) => {
     setLoading(true);
     try {
       const response = await fetch(`http://localhost:8080/fabric/patient/view-ehr?username=${username}`, {
@@ -89,9 +117,29 @@ const EHRView = () => {
       });
 
       if (!response.ok) throw new Error('Failed to fetch EHR data');
-      
+
       const data = await response.json();
-      setEhrData(data);
+
+      // Handle array vs object response
+      if (Array.isArray(data)) {
+        // Sort by timestamp if present, otherwise assume last is latest
+        const sorted = data.sort((a, b) => new Date(a.timestamp || 0).getTime() - new Date(b.timestamp || 0).getTime());
+        setRecords(sorted);
+
+        // Select the latest record by default
+        if (sorted.length > 0) {
+          setSelectedRecord(sorted[sorted.length - 1]);
+        } else {
+          setSelectedRecord({});
+        }
+      } else if (data && typeof data === 'object') {
+        // Single object case
+        setRecords([data]);
+        setSelectedRecord(data);
+      } else {
+        setRecords([]);
+        setSelectedRecord({});
+      }
     } catch (error) {
       console.error('Error fetching EHR:', error);
       setError('Failed to load your health records. Please try again.');
@@ -119,21 +167,25 @@ const EHRView = () => {
     setError('');
   };
 
+  const handleSelectRecord = (record: IEhrRecord) => {
+    setSelectedRecord(record);
+  };
+
   // Filter fields based on active category
-  const filteredFields = ehrFields.filter(field => 
+  const filteredFields = ehrFields.filter(field =>
     activeCategory === 'all' || field.category === activeCategory
   );
 
   return (
-    <Box sx={{ 
-      display: 'flex', 
-      flexDirection: 'column', 
+    <Box sx={{
+      display: 'flex',
+      flexDirection: 'column',
       minHeight: '100vh',
       bgcolor: theme.palette.mode === 'light' ? '#f8fafc' : '#121212'
     }}>
-      <AppBar 
-        position="fixed" 
-        color="primary" 
+      <AppBar
+        position="fixed"
+        color="primary"
         elevation={4}
         sx={{
           background: '#0A5741'
@@ -146,22 +198,22 @@ const EHRView = () => {
               WellNest
             </Typography>
           </Box>
-       
+
           <Box sx={{ flexGrow: 1, display: 'flex', justifyContent: 'center' }}>
-            <Typography 
-              variant="h6" 
-              component="div" 
-              sx={{ 
+            <Typography
+              variant="h6"
+              component="div"
+              sx={{
                 fontWeight: 500,
-                display: { xs: 'none', md: 'block' } 
+                display: { xs: 'none', md: 'block' }
               }}
             >
               Your Health Record
             </Typography>
           </Box>
-          
-          <Box sx={{ 
-            display: 'flex', 
+
+          <Box sx={{
+            display: 'flex',
             alignItems: 'center',
             mr: 2,
             px: 2,
@@ -174,12 +226,27 @@ const EHRView = () => {
               {username || 'Patient'}
             </Typography>
           </Box>
-          
-          <Button 
-            color="inherit" 
+
+          <Button
+            color="inherit"
+            onClick={() => navigate('/patient/history')}
+            startIcon={<HistoryIcon />}
+            sx={{
+              borderRadius: 2,
+              mr: 1,
+              '&:hover': {
+                backgroundColor: 'rgba(255, 255, 255, 0.1)'
+              }
+            }}
+          >
+            History
+          </Button>
+
+          <Button
+            color="inherit"
             onClick={handleGoBack}
             startIcon={<ArrowBackIcon />}
-            sx={{ 
+            sx={{
               borderRadius: 2,
               mr: 1,
               '&:hover': {
@@ -189,11 +256,11 @@ const EHRView = () => {
           >
             Back
           </Button>
-          
-          <IconButton 
-            color="inherit" 
+
+          <IconButton
+            color="inherit"
             onClick={handleLogout}
-            sx={{ 
+            sx={{
               borderRadius: 2,
               '&:hover': {
                 backgroundColor: 'rgba(255, 255, 255, 0.1)'
@@ -205,157 +272,210 @@ const EHRView = () => {
         </Toolbar>
       </AppBar>
 
-      <Box component="main" sx={{ flexGrow: 1, pt: 10, pb: 4 }}>
-        <Container maxWidth="lg">
-          <Paper 
-            elevation={4} 
-            sx={{ 
-              p: 3, 
-              mb: 3, 
-              borderRadius: 3,
-              background: 'linear-gradient(135deg, #0B8A67 0%, #09B135 100%)',
-              color: 'white',
-              boxShadow: '0 4px 20px rgba(11, 138, 103, 0.15)'
-            }}
-          >
-            <Grid container spacing={2} alignItems="center">
-              <Grid item xs={12}>
-                <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                  <Avatar sx={{ bgcolor: 'white', color: '#0B8A67', mr: 2 }}>
-                    <PersonIcon />
-                  </Avatar>
-                  <Typography variant="h5" component="h1" fontWeight={700}>
-                    Your Electronic Health Record
-                  </Typography>
+      <Box component="main" sx={{ flexGrow: 1, pt: 10, pb: 4, px: 2 }}>
+        <Container maxWidth="xl">
+          <Grid container spacing={3}>
+            {/* Left Sidebar: History List */}
+            <Grid item xs={12} md={3}>
+              <Paper elevation={0} sx={{ height: '100%', borderRadius: 2, overflow: 'hidden', border: '1px solid rgba(0,0,0,0.08)' }}>
+                <Box sx={{ p: 2, bgcolor: '#f5f5f5', borderBottom: '1px solid rgba(0,0,0,0.08)' }}>
+                  <Typography variant="h6" fontWeight={600} color="#0B8A67">Record Versions</Typography>
                 </Box>
-                <Typography variant="body2" sx={{ opacity: 0.9, ml: 6 }}>
-                  Last updated: {new Date().toLocaleDateString()}
-                </Typography>
-              </Grid>
-            </Grid>
-          </Paper>
-
-          <Paper 
-            elevation={0} 
-            sx={{ 
-              p: 1.5, 
-              mb: 3, 
-              display: 'flex', 
-              overflowX: 'auto',
-              borderRadius: 2,
-              bgcolor: 'white',
-              boxShadow: '0 2px 10px rgba(0,0,0,0.05)',
-              '&::-webkit-scrollbar': { height: '4px' },
-              '&::-webkit-scrollbar-thumb': { backgroundColor: 'rgba(0,0,0,0.2)', borderRadius: '4px' }
-            }}
-          >
-            <Box sx={{ display: 'flex', gap: 1.5, px: 1 }}>
-              {categories.map((category) => (
-                <Chip
-                  key={category.id}
-                  icon={category.icon}
-                  label={category.label}
-                  onClick={() => setActiveCategory(category.id)}
-                  color={activeCategory === category.id ? "primary" : "default"}
-                  variant={activeCategory === category.id ? "filled" : "outlined"}
-                  sx={{ 
-                    px: 1,
-                    py: 2.5,
-                    borderRadius: '16px',
-                    fontWeight: 500,
-                    '& .MuiChip-icon': { 
-                      color: activeCategory === category.id ? 'inherit' : category.color 
-                    },
-                    transition: 'all 0.2s ease'
-                  }}
-                />
-              ))}
-            </Box>
-          </Paper>
-
-          {loading ? (
-            <Paper sx={{ 
-              display: 'flex', 
-              justifyContent: 'center', 
-              alignItems: 'center',
-              flexDirection: 'column',
-              p: 8, 
-              borderRadius: 2,
-              bgcolor: 'white',
-              boxShadow: '0 2px 10px rgba(0,0,0,0.05)',
-            }}>
-              <CircularProgress sx={{ color: '#0B8A67' }} />
-              <Typography sx={{ mt: 2, color: 'text.secondary' }}>Loading your health records...</Typography>
-            </Paper>
-          ) : (
-            <Grid container spacing={3}>
-              {filteredFields.map((field) => (
-                <Grid item xs={12} md={6} key={field.id}>
-                  <Fade in={true} style={{ transitionDelay: '100ms' }}>
-                    <Paper 
-                      elevation={3} 
-                      sx={{ 
-                        height: '100%', 
-                        borderRadius: 3,
-                        bgcolor: 'white',
-                        transition: 'all 0.3s',
-                        '&:hover': {
-                          boxShadow: '0 4px 20px rgba(0,0,0,0.1)',
-                          transform: 'translateY(-3px)'
-                        }
-                      }}
-                    >
-                      <Box sx={{ p: 3 }}>
-                        <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                          <Box sx={{ 
-                            display: 'flex', 
-                            alignItems: 'center', 
-                            justifyContent: 'center',
-                            width: 40, 
-                            height: 40, 
-                            borderRadius: '50%',
-                            bgcolor: '#0B8A67',
-                            color: 'white',
-                            mr: 2
-                          }}>
-                            {field.icon}
-                          </Box>
-                          <Typography variant="h6" fontWeight={600}>
-                            {field.label}
-                          </Typography>
-                        </Box>
-                        <Typography 
-                          variant="body1" 
-                          color="text.secondary"
-                          sx={{ 
-                            whiteSpace: 'pre-wrap',
-                            minHeight: '100px',
-                            p: 2,
-                            borderRadius: 2,
-                            bgcolor: 'grey.50'
+                <List sx={{ overflowY: 'auto', maxHeight: 'calc(100vh - 200px)' }}>
+                  {loading ? (
+                    <Box sx={{ display: 'flex', justifyContent: 'center', p: 2 }}><CircularProgress size={24} sx={{ color: '#0B8A67' }} /></Box>
+                  ) : records.length === 0 ? (
+                    <Typography sx={{ p: 2, color: 'text.secondary', textAlign: 'center' }}>No records found.</Typography>
+                  ) : (
+                    records.slice().reverse().map((record, index) => (
+                      <React.Fragment key={record.recordId || index}>
+                        <ListItem
+                          button
+                          selected={selectedRecord.recordId === record.recordId}
+                          onClick={() => handleSelectRecord(record)}
+                          sx={{
+                            '&.Mui-selected': { bgcolor: 'rgba(11, 138, 103, 0.08)', borderLeft: '4px solid #0B8A67' },
+                            '&:hover': { bgcolor: 'rgba(0,0,0,0.04)' }
                           }}
                         >
-                          {ehrData[field.id] || 'No data available'}
-                        </Typography>
-                      </Box>
-                    </Paper>
-                  </Fade>
-                </Grid>
-              ))}
+                          <ListItemAvatar>
+                            <Avatar sx={{ bgcolor: '#e8f5e9', color: '#0B8A67' }}>
+                              <EventNoteIcon fontSize="small" />
+                            </Avatar>
+                          </ListItemAvatar>
+                          <ListItemText
+                            primary={new Date(record.timestamp).toLocaleDateString()}
+                            secondary={`Dr. ${record.doctorId}`}
+                            primaryTypographyProps={{ fontWeight: 600, fontSize: '0.9rem' }}
+                          />
+                        </ListItem>
+                        <Divider component="li" />
+                      </React.Fragment>
+                    ))
+                  )}
+                </List>
+              </Paper>
             </Grid>
-          )}
+
+            {/* Right Side: Detail View */}
+            <Grid item xs={12} md={9}>
+              <Paper
+                elevation={4}
+                sx={{
+                  p: 3,
+                  mb: 3,
+                  borderRadius: 3,
+                  background: 'linear-gradient(135deg, #0B8A67 0%, #09B135 100%)',
+                  color: 'white',
+                  boxShadow: '0 4px 20px rgba(11, 138, 103, 0.15)'
+                }}
+              >
+                <Grid container alignItems="center">
+                  <Grid item xs={12}>
+                    <Typography variant="h5" fontWeight={700} component="h1">
+                      {loading
+                        ? 'Loading...'
+                        : selectedRecord.timestamp
+                          ? `Health Record: ${new Date(selectedRecord.timestamp!).toLocaleDateString()}`
+                          : 'Your Electronic Health Record'}
+                    </Typography>
+                    {selectedRecord.doctorId && (
+                      <Typography variant="body2" sx={{ opacity: 0.9, mt: 0.5 }}>
+                        Recorded by: Dr. {selectedRecord.doctorId}
+                      </Typography>
+                    )}
+                  </Grid>
+                </Grid>
+              </Paper>
+
+              <Paper
+                elevation={0}
+                sx={{
+                  p: 1.5,
+                  mb: 3,
+                  display: 'flex',
+                  overflowX: 'auto',
+                  borderRadius: 2,
+                  bgcolor: 'white',
+                  boxShadow: '0 2px 10px rgba(0,0,0,0.05)',
+                  '&::-webkit-scrollbar': { height: '4px' },
+                  '&::-webkit-scrollbar-thumb': { backgroundColor: 'rgba(0,0,0,0.2)', borderRadius: '4px' }
+                }}
+              >
+                <Box sx={{ display: 'flex', gap: 1.5, px: 1 }}>
+                  {categories.map((category) => (
+                    <Chip
+                      key={category.id}
+                      icon={category.icon}
+                      label={category.label}
+                      onClick={() => setActiveCategory(category.id)}
+                      color={activeCategory === category.id ? "primary" : "default"}
+                      variant={activeCategory === category.id ? "filled" : "outlined"}
+                      sx={{
+                        px: 1,
+                        py: 2.5,
+                        borderRadius: '16px',
+                        fontWeight: 500,
+                        '& .MuiChip-icon': {
+                          color: activeCategory === category.id ? 'inherit' : category.color
+                        },
+                        transition: 'all 0.2s ease',
+                        // Custom styling for active state to match theme
+                        ...(activeCategory === category.id && {
+                          bgcolor: '#0B8A67',
+                          '&:hover': { bgcolor: '#09B135' }
+                        })
+                      }}
+                    />
+                  ))}
+                </Box>
+              </Paper>
+
+              {loading ? (
+                <Paper sx={{
+                  display: 'flex',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  flexDirection: 'column',
+                  p: 8,
+                  borderRadius: 2,
+                  bgcolor: 'white',
+                  boxShadow: '0 2px 10px rgba(0,0,0,0.05)',
+                }}>
+                  <CircularProgress sx={{ color: '#0B8A67' }} />
+                  <Typography sx={{ mt: 2, color: 'text.secondary' }}>Loading your health records...</Typography>
+                </Paper>
+              ) : (
+                <Grid container spacing={3}>
+                  {filteredFields.map((field) => (
+                    <Grid item xs={12} md={6} key={field.id}>
+                      <Fade in={true} style={{ transitionDelay: '100ms' }}>
+                        <Paper
+                          elevation={3}
+                          sx={{
+                            height: '100%',
+                            borderRadius: 3,
+                            bgcolor: 'white',
+                            transition: 'all 0.3s',
+                            '&:hover': {
+                              boxShadow: '0 4px 20px rgba(0,0,0,0.1)',
+                              transform: 'translateY(-3px)'
+                            }
+                          }}
+                        >
+                          <Box sx={{ p: 3 }}>
+                            <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                              <Box sx={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                width: 40,
+                                height: 40,
+                                borderRadius: '50%',
+                                bgcolor: '#0B8A67',
+                                color: 'white',
+                                mr: 2
+                              }}>
+                                {field.icon}
+                              </Box>
+                              <Typography variant="h6" fontWeight={600}>
+                                {field.label}
+                              </Typography>
+                            </Box>
+                            <Typography
+                              variant="body1"
+                              color="text.secondary"
+                              sx={{
+                                whiteSpace: 'pre-wrap',
+                                minHeight: '100px',
+                                p: 2,
+                                borderRadius: 2,
+                                bgcolor: 'grey.50'
+                              }}
+                            >
+                              {selectedRecord[field.id] || 'No data available'}
+                            </Typography>
+                          </Box>
+                        </Paper>
+                      </Fade>
+                    </Grid>
+                  ))}
+                </Grid>
+              )}
+            </Grid>
+          </Grid>
         </Container>
       </Box>
 
-      <Snackbar 
-        open={!!error} 
-        autoHideDuration={6000} 
+      <Snackbar
+        open={!!error}
+        autoHideDuration={6000}
         onClose={handleCloseAlert}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
       >
-        <Alert 
-          onClose={handleCloseAlert} 
-          severity="error" 
+        <Alert
+          onClose={handleCloseAlert}
+          severity="error"
           variant="filled"
           sx={{ width: '100%', boxShadow: 3, borderRadius: 2 }}
         >
