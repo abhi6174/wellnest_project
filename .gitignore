@@ -16,8 +16,16 @@ coverage/
 *.war
 
 # Blockchain generated artifacts
-blockchain/artifacts/
+blockchain/artifacts/channel/crypto-config/
+blockchain/artifacts/crypto-config/
+blockchain/artifacts/channel/*.block
+blockchain/artifacts/channel/*.tx
+blockchain/artifacts/channel/FATA
+blockchain/artifacts/channel/INFO
+blockchain/artifacts/INFO
 blockchain/channel-artifacts/
+
+# Legacy paths (if any)
 blockchain/channel/crypto-config/
 blockchain/channel/*.block
 blockchain/channel/*.tx
