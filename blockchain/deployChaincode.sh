@@ -104,7 +104,8 @@ approveForMyOrg1(){
     peer lifecycle chaincode approveformyorg -o localhost:7050  \
     --ordererTLSHostnameOverride orderer.example.com --tls $CORE_PEER_TLS_ENABLED \
     --cafile $ORDERER_CA --channelID $CHANNEL_NAME --name ${CC_NAME} --version ${VERSION} \
-    --init-required --package-id ${PACKAGE_ID} --sequence ${SEQUENCE}
+    --init-required --package-id ${PACKAGE_ID} --sequence ${SEQUENCE} \
+    --signature-policy "OR('Org1MSP.peer','Org2MSP.peer')"
 
     echo "===================== chaincode approved from org 1 ===================== "
     
@@ -121,7 +122,8 @@ checkCommitReadyness(){
     setGlobalsForPeer0Org1
     peer lifecycle chaincode checkcommitreadiness \
     --channelID $CHANNEL_NAME --name ${CC_NAME} --version ${VERSION} \
-    --sequence ${SEQUENCE} --output json --init-required
+    --sequence ${SEQUENCE} --output json --init-required \
+    --signature-policy "OR('Org1MSP.peer','Org2MSP.peer')"
     echo "===================== checking commit readyness from org 1 ===================== "
 }
 
@@ -132,7 +134,8 @@ approveForMyOrg2(){
     --ordererTLSHostnameOverride orderer.example.com --tls $CORE_PEER_TLS_ENABLED \
     --cafile $ORDERER_CA --channelID $CHANNEL_NAME --name ${CC_NAME} \
     --version ${VERSION} --init-required --package-id ${PACKAGE_ID} \
-    --sequence ${SEQUENCE}
+    --sequence ${SEQUENCE} \
+    --signature-policy "OR('Org1MSP.peer','Org2MSP.peer')"
 
     echo "===================== chaincode approved from org 2 ===================== "
 }
@@ -140,14 +143,14 @@ approveForMyOrg2(){
 checkCommitReadyness(){
     
     setGlobalsForPeer0Org1
-    peer lifecycle chaincode checkcommitreadiness --channelID $CHANNEL_NAME --peerAddresses localhost:7051 --tlsRootCertFiles $PEER0_ORG1_CA --name ${CC_NAME} --version ${VERSION} --sequence ${SEQUENCE} --output json --init-required
+    peer lifecycle chaincode checkcommitreadiness --channelID $CHANNEL_NAME --peerAddresses localhost:7051 --tlsRootCertFiles $PEER0_ORG1_CA --name ${CC_NAME} --version ${VERSION} --sequence ${SEQUENCE} --output json --init-required --signature-policy "OR('Org1MSP.peer','Org2MSP.peer')"
     echo "===================== checking commit readyness from org 1 ===================== "
 }
 
 commitChaincodeDefination(){
     setGlobalsForPeer0Org1
     #set -x  ## Turn on debugging mode
-    peer lifecycle chaincode commit -o localhost:7050 --ordererTLSHostnameOverride orderer.example.com --tls $CORE_PEER_TLS_ENABLED  --cafile $ORDERER_CA --channelID $CHANNEL_NAME --name ${CC_NAME} --peerAddresses localhost:7051 --tlsRootCertFiles $PEER0_ORG1_CA --peerAddresses localhost:9051 --tlsRootCertFiles $PEER0_ORG2_CA --version ${VERSION} --sequence ${SEQUENCE} --init-required
+    peer lifecycle chaincode commit -o localhost:7050 --ordererTLSHostnameOverride orderer.example.com --tls $CORE_PEER_TLS_ENABLED  --cafile $ORDERER_CA --channelID $CHANNEL_NAME --name ${CC_NAME} --peerAddresses localhost:7051 --tlsRootCertFiles $PEER0_ORG1_CA --peerAddresses localhost:9051 --tlsRootCertFiles $PEER0_ORG2_CA --version ${VERSION} --sequence ${SEQUENCE} --init-required --signature-policy "OR('Org1MSP.peer','Org2MSP.peer')"
     #set +x  ## Turn off debugging mode
    
 }

@@ -86,7 +86,7 @@ const Home: React.FC<HomeProps> = ({ darkMode, toggleDarkMode }) => {
                         <div className="col-lg-6 position-relative animate-fade-in delay-200">
                             <div className="position-absolute top-50 start-50 translate-middle" style={{ width: '120%', height: '120%', background: 'radial-gradient(circle, var(--primary-100) 0%, rgba(255,255,255,0) 70%)', zIndex: -1 }}></div>
                             <img
-                                src="https://img.freepik.com/free-vector/telemedicine-concept-audit-medical-history_23-2148590807.jpg"
+                                src="../public/images/hero_ehr.png"
                                 className="img-fluid rounded-4 shadow-xl border border-white"
                                 alt="Digital Healthcare Dashboard"
                                 style={{ transform: 'rotate(-2deg)' }}
