@@ -1,3 +1,4 @@
+```bash
 Wellnest - Running steps
 🚀 Installation & Setup
 1. Clone the Repository
@@ -195,3 +196,6 @@ recordAccess(doctorId, patientId, hash, timestamp) - Log access attempt
 activateAccess(doctorId, patientId, hash, timestamp) - Grant access
 revokeAccess(doctorId, patientId, hash, timestamp) - Revoke access
 getAccessHistory(patientId, doctorId) - View access audit trail
+
+
+```
