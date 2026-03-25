@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import PatientChatbotWidget from './PatientChatbotWidget';
 import {
   Box,
   Container,
@@ -21,7 +22,8 @@ import {
   ListItem,
   ListItemText,
   ListItemAvatar,
-  Divider
+  Divider,
+  TextField
 } from '@mui/material';
 import { alpha } from '@mui/material/styles';
 import {
@@ -73,6 +75,7 @@ const EHRView = () => {
   const [error, setError] = useState('');
   const [username, setUsername] = useState('');
   const [activeCategory, setActiveCategory] = useState('all');
+  const [searchTerm, setSearchTerm] = useState('');
 
   // Define categories for the EHR fields with enhanced icons
   const categories = [
@@ -174,6 +177,10 @@ const EHRView = () => {
   // Filter fields based on active category
   const filteredFields = ehrFields.filter(field =>
     activeCategory === 'all' || field.category === activeCategory
+  );
+
+  const filteredRecords = records.filter(r => 
+    r.recordId?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
@@ -279,15 +286,23 @@ const EHRView = () => {
             <Grid item xs={12} md={3}>
               <Paper elevation={0} sx={{ height: '100%', borderRadius: 2, overflow: 'hidden', border: '1px solid rgba(0,0,0,0.08)' }}>
                 <Box sx={{ p: 2, bgcolor: '#f5f5f5', borderBottom: '1px solid rgba(0,0,0,0.08)' }}>
-                  <Typography variant="h6" fontWeight={600} color="#0B8A67">Record Versions</Typography>
+                  <Typography variant="h6" fontWeight={600} color="#0B8A67" sx={{ mb: 1.5 }}>Record Versions</Typography>
+                  <TextField 
+                    fullWidth 
+                    size="small" 
+                    placeholder="Search by Record ID..." 
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    sx={{ bgcolor: 'white', borderRadius: 1 }}
+                  />
                 </Box>
                 <List sx={{ overflowY: 'auto', maxHeight: 'calc(100vh - 200px)' }}>
                   {loading ? (
                     <Box sx={{ display: 'flex', justifyContent: 'center', p: 2 }}><CircularProgress size={24} sx={{ color: '#0B8A67' }} /></Box>
-                  ) : records.length === 0 ? (
+                  ) : filteredRecords.length === 0 ? (
                     <Typography sx={{ p: 2, color: 'text.secondary', textAlign: 'center' }}>No records found.</Typography>
                   ) : (
-                    records.slice().reverse().map((record, index) => (
+                    filteredRecords.slice().reverse().map((record, index) => (
                       <React.Fragment key={record.recordId || index}>
                         <ListItem
                           button
@@ -305,7 +320,12 @@ const EHRView = () => {
                           </ListItemAvatar>
                           <ListItemText
                             primary={new Date(record.timestamp).toLocaleDateString()}
-                            secondary={`Dr. ${record.doctorId}`}
+                            secondary={
+                              <>
+                                <Typography variant="body2" component="span" display="block">Dr. {record.doctorId}</Typography>
+                                <Typography variant="caption" component="span" display="block" color="text.secondary">ID: {record.recordId}</Typography>
+                              </>
+                            }
                             primaryTypographyProps={{ fontWeight: 600, fontSize: '0.9rem' }}
                           />
                         </ListItem>
@@ -340,9 +360,14 @@ const EHRView = () => {
                           : 'Your Electronic Health Record'}
                     </Typography>
                     {selectedRecord.doctorId && (
-                      <Typography variant="body2" sx={{ opacity: 0.9, mt: 0.5 }}>
-                        Recorded by: Dr. {selectedRecord.doctorId}
-                      </Typography>
+                      <>
+                        <Typography variant="body2" sx={{ opacity: 0.9, mt: 0.5 }}>
+                          Recorded by: Dr. {selectedRecord.doctorId}
+                        </Typography>
+                        <Typography variant="caption" sx={{ opacity: 0.7, display: 'block', mt: 0.5 }}>
+                          Record ID: {selectedRecord.recordId}
+                        </Typography>
+                      </>
                     )}
                   </Grid>
                 </Grid>
@@ -482,6 +507,7 @@ const EHRView = () => {
           {error}
         </Alert>
       </Snackbar>
+      <PatientChatbotWidget />
     </Box>
   );
 };

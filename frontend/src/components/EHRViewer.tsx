@@ -42,6 +42,7 @@ import {
   Healing as HealingIcon,
   EventNote as EventNoteIcon
 } from '@mui/icons-material';
+import ChatbotWidget from './ChatbotWidget';
 
 interface IEhrRecord {
   recordId: string;
@@ -79,6 +80,7 @@ const EHRViewer = () => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [activeCategory, setActiveCategory] = useState('all');
+  const [searchTerm, setSearchTerm] = useState('');
 
   // Define categories (same as before)
   const categories = [
@@ -227,6 +229,10 @@ const EHRViewer = () => {
     activeCategory === 'all' || field.category === activeCategory
   );
 
+  const filteredRecords = records.filter(r => 
+    r.recordId?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', bgcolor: '#f8fafc' }}>
       <AppBar position="fixed" elevation={2} sx={{
@@ -262,24 +268,34 @@ const EHRViewer = () => {
             {/* Left Sidebar: History List */}
             <Grid item xs={12} md={3}>
               <Paper elevation={0} sx={{ height: '100%', borderRadius: 2, overflow: 'hidden', border: '1px solid rgba(0,0,0,0.08)' }}>
-                <Box sx={{ p: 2, bgcolor: '#f5f5f5', borderBottom: '1px solid rgba(0,0,0,0.08)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <Typography variant="h6" fontWeight={600} color="primary">History</Typography>
-                  <Button
-                    variant="contained"
-                    size="small"
-                    startIcon={<AddIcon />}
-                    onClick={handleAddRecord}
-                    disabled={isAdding}
-                    sx={{ borderRadius: 4, textTransform: 'none' }}
-                  >
-                    New
-                  </Button>
+                <Box sx={{ p: 2, bgcolor: '#f5f5f5', borderBottom: '1px solid rgba(0,0,0,0.08)' }}>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1.5 }}>
+                    <Typography variant="h6" fontWeight={600} color="primary">History</Typography>
+                    <Button
+                      variant="contained"
+                      size="small"
+                      startIcon={<AddIcon />}
+                      onClick={handleAddRecord}
+                      disabled={isAdding}
+                      sx={{ borderRadius: 4, textTransform: 'none' }}
+                    >
+                      New
+                    </Button>
+                  </Box>
+                  <TextField 
+                    fullWidth 
+                    size="small" 
+                    placeholder="Search by Record ID..." 
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    sx={{ bgcolor: 'white', borderRadius: 1 }}
+                  />
                 </Box>
                 <List sx={{ overflowY: 'auto', maxHeight: 'calc(100vh - 200px)' }}>
-                  {records.length === 0 ? (
+                  {filteredRecords.length === 0 ? (
                     <Typography sx={{ p: 2, color: 'text.secondary', textAlign: 'center' }}>No history found.</Typography>
                   ) : (
-                    records.slice().reverse().map((record, index) => (
+                    filteredRecords.slice().reverse().map((record, index) => (
                       <React.Fragment key={record.recordId || index}>
                         <ListItem
                           button
@@ -297,7 +313,12 @@ const EHRViewer = () => {
                           </ListItemAvatar>
                           <ListItemText
                             primary={new Date(record.timestamp).toLocaleDateString()}
-                            secondary={`Dr. ${record.doctorId}`}
+                            secondary={
+                              <>
+                                <Typography variant="body2" component="span" display="block">Dr. {record.doctorId}</Typography>
+                                <Typography variant="caption" component="span" display="block" color="text.secondary">ID: {record.recordId}</Typography>
+                              </>
+                            }
                             primaryTypographyProps={{ fontWeight: 600, fontSize: '0.9rem' }}
                           />
                         </ListItem>
@@ -324,13 +345,18 @@ const EHRViewer = () => {
               >
                 <Grid container alignItems="center">
                   <Grid item xs={8}>
-                    <Typography variant="h5" fontWeight={700}>
+                    <Typography variant="h5" fontWeight={700} color="white">
                       {isAdding ? 'New Medical Entry' : `Visit Details: ${selectedRecord.timestamp ? new Date(selectedRecord.timestamp!).toLocaleDateString() : 'Select a record'}`}
                     </Typography>
                     {!isAdding && selectedRecord.doctorId && (
-                      <Typography variant="subtitle2" sx={{ opacity: 0.8, mt: 0.5 }}>
-                        Recorded by: Dr. {selectedRecord.doctorId}
-                      </Typography>
+                      <>
+                        <Typography variant="subtitle2" sx={{ opacity: 0.8, mt: 0.5, color: 'white' }}>
+                          Recorded by: Dr. {selectedRecord.doctorId}
+                        </Typography>
+                        <Typography variant="caption" sx={{ opacity: 0.7, display: 'block', mt: 0.5, color: 'white' }}>
+                          Record ID: {selectedRecord.recordId}
+                        </Typography>
+                      </>
                     )}
                   </Grid>
                   <Grid item xs={4} sx={{ textAlign: 'right' }}>
@@ -444,6 +470,8 @@ const EHRViewer = () => {
       <Snackbar open={!!success} autoHideDuration={6000} onClose={handleCloseAlert}>
         <Alert severity="success" onClose={handleCloseAlert}>{success}</Alert>
       </Snackbar>
+
+      <ChatbotWidget patientId={patientId || localStorage.getItem('patientId') || ''} />
     </Box>
   );
 };

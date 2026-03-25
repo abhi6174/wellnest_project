@@ -93,7 +93,7 @@ export class DoctorService {
             const timestamp = new Date().toISOString();
 
             // Chaincode: recordAccess(ctx, doctorId, patientId, hash, timestamp)
-            const result = await fabricService.submitTransaction(
+            await fabricService.submitTransaction(
                 'mychannel',
                 'ehr',
                 'recordAccess',
@@ -102,7 +102,7 @@ export class DoctorService {
                 mspId
             );
 
-            console.log('Access added to blockchain:', result);
+            // console.log('Access added to blockchain:', result);
             return true;
         } catch (error) {
             console.error('Error adding access:', error);
@@ -123,7 +123,7 @@ export class DoctorService {
             const timestamp = new Date().toISOString();
 
             // Chaincode: updateEHRRecord(ctx, doctorId, patientId, newHash, timestamp)
-            const result = await fabricService.submitTransaction(
+            await fabricService.submitTransaction(
                 'mychannel',
                 'ehr',
                 'updateEHRRecord',
@@ -132,7 +132,7 @@ export class DoctorService {
                 mspId
             );
 
-            console.log('Update added to blockchain:', result);
+            //console.log('Update added to blockchain:', result);
             return true;
         } catch (error) {
             console.error('Error adding update:', error);

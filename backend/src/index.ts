@@ -9,6 +9,7 @@ import { insertPredefinedUsers } from './config/PredefinedUsers';
 import fabricController from './controllers/FabricController';
 import doctorController from './controllers/DoctorController';
 import patientController from './controllers/PatientController';
+import aiExportController from './controllers/ai/AiExportController';
 
 const app: Application = express();
 
@@ -25,6 +26,9 @@ app.use(express.urlencoded({ extended: true }));
 app.use('/fabric', fabricController);
 app.use('/fabric/doctor', doctorController);
 app.use('/fabric/patient', patientController);
+
+// AI Export Route
+app.use('/ai', aiExportController);
 
 // Health check endpoint
 app.get('/health', (_req, res) => {

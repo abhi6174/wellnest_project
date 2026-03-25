@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import Navbar from './Navbar';
+import PatientChatbotWidget from './PatientChatbotWidget';
 import { useNavigate } from 'react-router-dom';
 import {
   Box,
@@ -601,6 +602,7 @@ const PatientDashboard = () => {
           {success}
         </Alert>
       </Snackbar>
+      <PatientChatbotWidget />
     </Box>
   );
 };

@@ -68,7 +68,7 @@ router.get('/view-ehr', authMiddleware, async (req: AuthRequest, res: Response) 
         const records = await ehrService.getRecords(patientId as string, did, mspId);
 
         if (records) {
-            console.log('Returning EHR records');
+            // console.log('Returning EHR records');
             res.status(200).json(records);
         } else {
             res.status(404).json({ message: 'EHR records not found or access denied' });

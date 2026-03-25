@@ -42,7 +42,7 @@ router.post('/login', async (req: Request, res: Response) => {
         // Generate JWT
         const token = jwtUtils.generateToken(username, mspId);
 
-        console.log(`User ${username} authenticated successfully`);
+        //console.log(`User ${username} authenticated successfully`);
         res.status(200).json({ token });
     } catch (error) {
         console.error('Login error:', error);

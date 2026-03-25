@@ -49,8 +49,8 @@ export class FabricGatewayService {
             const certificatePem = userCredentials.credentials.certificate;
             const privateKeyPem = userCredentials.credentials.privateKey;
 
-            console.log(`Loading connection profile: ${connectionProfilePath}`);
-            console.log(`Loading wallet file: ${walletFilePath}`);
+            // console.log(`Loading connection profile: ${connectionProfilePath}`);
+            // console.log(`Loading wallet file: ${walletFilePath}`);
 
             // Create in-memory wallet
             const wallet = await Wallets.newInMemoryWallet();

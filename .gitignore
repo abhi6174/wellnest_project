@@ -34,3 +34,15 @@ blockchain/channel/*.tx
 backend/connection-profiles/*/wallet/
 backend/connection-profiles/*/*.json
 backend/connection-profiles/*/*.yaml
+
+# Chatbot & Python Environment
+__pycache__/
+*.pyc
+.venv/
+venv/
+env/
+.env/
+
+# Chatbot Storage & Large Data
+chatbot-service/chroma_db/
+chatbot-service/chroma_data/

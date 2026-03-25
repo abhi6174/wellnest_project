@@ -27,7 +27,7 @@ export class FabricService {
         let gateway: Gateway | null = null;
 
         try {
-            console.log(`Submitting transaction: ${functionName} with args:`, args);
+            //console.log(`Submitting transaction: ${functionName} with args:`, args);
 
             const contract = await this.getContract(
                 channelName,
@@ -41,7 +41,7 @@ export class FabricService {
             // Submit transaction
             const result = await contract.contract.submitTransaction(functionName, ...args);
 
-            console.log('Transaction submitted successfully');
+            // console.log('Transaction submitted successfully');
             return result.toString('utf8');
         } catch (error) {
             console.error('Error submitting transaction:', error);
@@ -67,7 +67,7 @@ export class FabricService {
         let gateway: Gateway | null = null;
 
         try {
-            console.log(`Evaluating transaction: ${functionName} with args:`, args);
+            // console.log(`Evaluating transaction: ${functionName} with args:`, args);
 
             const contract = await this.getContract(
                 channelName,
@@ -81,7 +81,7 @@ export class FabricService {
             // Evaluate transaction (read-only)
             const result = await contract.contract.evaluateTransaction(functionName, ...args);
 
-            console.log('Transaction evaluated successfully');
+            // console.log('Transaction evaluated successfully');
             return result.toString('utf8');
         } catch (error) {
             console.error('Error evaluating transaction:', error);

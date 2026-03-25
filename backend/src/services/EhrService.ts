@@ -87,6 +87,22 @@ export class EhrService {
                 console.error('Failed to log update to blockchain:', bcError);
             }
 
+            // Webhook to Python Chatbot Service for LLM Summarization and Vector Storage
+            try {
+                fetch('http://localhost:8000/webhooks/ehr-record', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        patient_id: patientId,
+                        record: newRecord
+                    })
+                }).catch(err => {
+                    console.error('Failed to trigger Python webhook (is the FastAPI server running?):', err.message);
+                });
+            } catch (webhookError) {
+                console.error('Error initiating webhook:', webhookError);
+            }
+
             return true;
         } catch (error) {
             console.error('Error adding EHR record:', error);
